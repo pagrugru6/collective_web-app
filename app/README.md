@@ -1,3 +1,20 @@
+### Prerequisites
+    Setup psql: https://www.postgresql.org/download/
+
+### Running the program
+    1. Open a terminal and write "psql -h localhost -U postgres".
+    2. Login with your password if necessary.
+    3. (First time only) Write "createdb collective".
+    4. (First time only) Write createuser pacollective.
+    5. (First time only) write "GRANT ALL PRIVILEGES ON DATABASE collective TO pacollective;".
+    6. Enter the folder "collective_web-app\app" in a terminal.
+    7. (First time only) Enter "pip install -r requirements.txt". 
+    8. (First time only) Enter  "python .\init_db.py".  
+    9. To run the website enter "python .\run.py".
+    10. Enter the link from the terminal's response in a webbrowser and enjoy!
+
+
+##### OLD README DELETE BEFORE HAND-IN:
 # Unfinished Bank Project: UIS_Prototype
 ## usage
 The UIS_prototype is a website running Python and Flask library. It has evolved as an unfinished project with development flaws and serves as a starting point for adopting flask as a means of making your own prototype.
