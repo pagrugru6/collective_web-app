@@ -6,11 +6,20 @@
 </head>
 <body>
     <h1>Browse Collectives</h1>
+    {% if logged_in %}
+        <a href="{{ url_for('create_collective') }}">Create New Collective</a>
+    {% else %}
+        <p><a href="{{ url_for('login') }}">Log in</a> to create a new collective.</p>
+    {% endif %}
     <ul>
     {% for collective in collectives %}
-        <li>{{ collective.name }} - {{ collective.description }}</li>
+        <li><a href="{{ url_for('collective_home', collective_id=collective[0]) }}">{{ collective[1] }}</a> - {{ collective[2] }}</li>
     {% endfor %}
     </ul>
-    <a href="{{ url_for('home') }}">Back to Home</a>
+    {% if logged_in %}
+        <a href="{{ url_for('home') }}">Back to Home</a>
+    {% else %}
+        <a href="{{ url_for('startup') }}">Back to Startup Screen</a>
+    {% endif %}
 </body>
 </html>

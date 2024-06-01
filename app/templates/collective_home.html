@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ collective.name }}</title>
+</head>
+<body>
+    <h1>{{ collective.name }}</h1>
+    <p>{{ collective.description }}</p>
+    <p>Location: {{ collective.location }}</p>
+    {% if is_member %}
+        <h2>Projects</h2>
+        <ul>
+        {% for project in projects %}
+            <li><a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a></li>
+        {% endfor %}
+        </ul>
+        <a href="{{ url_for('create_project', collective_id=collective.id) }}">Create New Project</a>
+        <h2>Chat</h2>
+        <div id="chat-box" style="border: 1px solid black; height: 300px; overflow-y: scroll;">
+        {% for message in messages %}
+            <div>{{ message.sender_id }}: {{ message.message }}</div>
+        {% endfor %}
+        </div>
+        <form method="post" action="{{ url_for('send_collective_message', collective_id=collective.id) }}">
+            <input type="text" name="message" placeholder="Type your message...">
+            <button type="submit">Send</button>
+        </form>
+    {% else %}
+        <form method="post" action="{{ url_for('join_collective', collective_id=collective.id) }}">
+            <button type="submit">Join Collective</button>
+        </form>
+    {% endif %}
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>

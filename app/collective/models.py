@@ -86,14 +86,32 @@ class Project:
         self.description = description
 
     @staticmethod
+    def create(name, description, collective_id):
+        Database.query(
+            "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
+            (name, description)
+        )
+        project_id = Database.fetchone(
+            "SELECT id FROM projects WHERE name = %s AND description = %s",
+            (name, description)
+        )[0]
+        Organizes.create(collective_id, project_id)
+
+    @staticmethod
+    def get_all():
+        return Database.fetchall("SELECT id, name, description FROM projects")
+
+    @staticmethod
+    def get_by_collective(collective_id):
+        return Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
+            (collective_id,)
+        )
+
+    @staticmethod
     def get_by_id(project_id):
         result = Database.fetchone("SELECT * FROM projects WHERE id = %s", (project_id,))
         return Project(*result) if result else None
-
-    @staticmethod
-    def create(name, description):
-        Database.query("INSERT INTO projects (name, description) VALUES (%s, %s)",
-                       (name, description))
 
 
 class Collective:
@@ -104,8 +122,20 @@ class Collective:
         self.location = location
 
     @staticmethod
+    def create(name, description, location):
+        Database.query(
+            "INSERT INTO collectives (name, description, location) VALUES (%s, %s, %s)",
+            (name, description, location)
+        )
+
+    @staticmethod
     def get_all():
         return Database.fetchall("SELECT id, name, description, location FROM collectives")
+
+    @staticmethod
+    def get_by_id(collective_id):
+        result = Database.fetchone("SELECT id, name, description, location FROM collectives WHERE id = %s", (collective_id,))
+        return Collective(*result) if result else None
     
 class Project:
     def __init__(self, id, name, description):
@@ -136,8 +166,19 @@ class Skill:
 class BelongsTo:
     @staticmethod
     def create(person_id, collective_id):
-        Database.query("INSERT INTO belongs_to (person_id, collective_id) VALUES (%s, %s)",
-                       (person_id, collective_id))
+        Database.query(
+            "INSERT INTO belongs_to (person_id, collective_id) VALUES (%s, %s)",
+            (person_id, collective_id)
+        )
+
+    @staticmethod
+    def is_member(person_id, collective_id):
+        result = Database.fetchone(
+            "SELECT 1 FROM belongs_to WHERE person_id = %s AND collective_id = %s",
+            (person_id, collective_id)
+        )
+        return result is not None
+
     @staticmethod
     def get_collectives_for_user(person_id):
         return Database.fetchall(
@@ -154,8 +195,19 @@ class Possesses:
 class Participates:
     @staticmethod
     def create(person_id, project_id):
-        Database.query("INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
-                       (person_id, project_id))
+        Database.query(
+            "INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
+            (person_id, project_id)
+        )
+
+    @staticmethod
+    def is_member(person_id, project_id):
+        result = Database.fetchone(
+            "SELECT 1 FROM participates WHERE person_id = %s AND project_id = %s",
+            (person_id, project_id)
+        )
+        return result is not None
+
     @staticmethod
     def get_projects_for_user(person_id):
         return Database.fetchall(

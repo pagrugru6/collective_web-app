@@ -25,8 +25,8 @@ def before_request():
     pass
 
 @app.route('/')
-def start():
-    return render_template('start.html')
+def startup():
+    return render_template('startup.html')
 
 @app.route('/home')
 @login_required
@@ -52,10 +52,27 @@ def profile():
     return render_template('profile.html', user=user)
 
 @app.route('/browse_collectives')
-@login_required
 def browse_collectives():
+    print("Accessing browse_collectives route")
     collectives = Collective.get_all()
-    return render_template('browse_collectives.html', collectives=collectives)
+    logged_in = current_user.is_authenticated
+    if logged_in:
+        print("User is logged in")
+    else:
+        print("User is not logged in")
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
+
+@app.route('/create_collective', methods=['GET', 'POST'])
+@login_required
+def create_collective():
+    print("Accessing create_collective route")
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        location = request.form['location']
+        Collective.create(name, description, location)
+        return redirect(url_for('browse_collectives'))
+    return render_template('create_collective.html')
 
 @app.route('/browse_projects')
 @login_required
@@ -100,7 +117,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    return redirect(url_for('startup'))
 
 @app.route('/collectives', methods=['GET', 'POST'])
 @login_required
@@ -184,3 +201,42 @@ def get_invitations():
 if __name__ == "__main__":
     print("Starting Flask application...")
     app.run(debug=True)
+
+@app.route('/collective/<int:collective_id>')
+@login_required
+def collective_home(collective_id):
+    collective = Collective.get_by_id(collective_id)
+    is_member = BelongsTo.is_member(current_user.id, collective_id)
+    projects = Project.get_by_collective(collective_id) if is_member else []
+    messages = CollectiveMessage.get_messages(collective_id) if is_member else []
+    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages)
+
+@app.route('/project/<int:project_id>')
+@login_required
+def project_home(project_id):
+    project = Project.get_by_id(project_id)
+    is_member = Participates.is_member(current_user.id, project_id)
+    messages = ProjectMessage.get_messages(project_id) if is_member else []
+    return render_template('project_home.html', project=project, is_member=is_member, messages=messages)
+
+@app.route('/join_collective/<int:collective_id>', methods=['POST'])
+@login_required
+def join_collective(collective_id):
+    BelongsTo.create(current_user.id, collective_id)
+    return redirect(url_for('collective_home', collective_id=collective_id))
+
+@app.route('/join_project/<int:project_id>', methods=['POST'])
+@login_required
+def join_project(project_id):
+    Participates.create(current_user.id, project_id)
+    return redirect(url_for('project_home', project_id=project_id))
+
+@app.route('/create_project/<int:collective_id>', methods=['GET', 'POST'])
+@login_required
+def create_project(collective_id):
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        Project.create(name, description, collective_id)
+        return redirect(url_for('collective_home', collective_id=collective_id))
+    return render_template('create_project.html', collective_id=collective_id)
