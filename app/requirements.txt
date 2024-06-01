@@ -1,6 +1,4 @@
-flask
-flask_bcrypt
-flask_login
-flask_wtf
-wtforms
+Flask
+Flask-Login
+psycopg2-binary
 psycopg2
