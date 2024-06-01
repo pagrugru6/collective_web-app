@@ -5,15 +5,24 @@
     <title>Home</title>
 </head>
 <body>
-    <h1>Welcome to the Collective Web App</h1>
-    <nav>
-        <ul>
-            <li><a href="/chat_collective">Collective Chat</a></li>
-            <li><a href="/chat_project">Project Chat</a></li>
-            <li><a href="/invitations">Invitations</a></li>
-            <li><a href="/register">Register</a></li>
-            <li><a href="/login">Login</a></li>
-        </ul>
-    </nav>
+    <h1>Welcome, {{ user.name }}</h1>
+    <a href="{{ url_for('profile') }}">Edit Profile</a> |
+    <a href="{{ url_for('browse_collectives') }}">Browse Collectives</a> |
+    <a href="{{ url_for('browse_projects') }}">Browse Projects</a> |
+    <a href="{{ url_for('logout') }}">Logout</a>
+    
+    <h2>Your Collectives</h2>
+    <ul>
+    {% for collective in collectives %}
+        <li>{{ collective.name }}</li>
+    {% endfor %}
+    </ul>
+    
+    <h2>Your Projects</h2>
+    <ul>
+    {% for project in projects %}
+        <li>{{ project.name }}</li>
+    {% endfor %}
+    </ul>
 </body>
 </html>

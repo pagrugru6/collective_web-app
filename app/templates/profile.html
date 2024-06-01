@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form method="post">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" value="{{ user.name }}"><br>
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" value="{{ user.email }}"><br>
+        <label for="bio">Bio:</label><br>
+        <textarea id="bio" name="bio">{{ user.bio }}</textarea><br>
+        <label for="location">Location:</label><br>
+        <input type="text" id="location" name="location" value="{{ user.location }}"><br>
+        <button type="submit">Save</button>
+    </form>
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browse Collectives</title>
+</head>
+<body>
+    <h1>Browse Collectives</h1>
+    <ul>
+    {% for collective in collectives %}
+        <li>{{ collective.name }} - {{ collective.description }}</li>
+    {% endfor %}
+    </ul>
+    <a href="{{ url_for('home') }}">Back to Home</a>
+</body>
+</html>

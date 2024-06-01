@@ -3,6 +3,7 @@ import psycopg2
 from flask import Flask, render_template, redirect, url_for, request, jsonify, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Invitation, Database
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -19,26 +20,48 @@ def load_user(user_id):
 def close_db(exception):
     Database.close_db()
 
-def init_db():
-    with app.app_context():
-        conn = psycopg2.connect(app.config['DATABASE_URL'])
-        cursor = conn.cursor()
-        with open(os.path.join(os.path.dirname(__file__), 'collective', 'schema.sql'), 'r') as schema_file:
-            schema_sql = schema_file.read()
-        cursor.execute(schema_sql)
-        conn.commit()
-        cursor.close()
-        conn.close()
-
 @app.before_request
 def before_request():
-    if not hasattr(g, 'initialized'):
-        init_db()
-        g.initialized = True
+    pass
 
 @app.route('/')
+def start():
+    return render_template('start.html')
+
+@app.route('/home')
+@login_required
 def home():
-    return render_template('home.html')
+    user_id = current_user.id
+    user = Person.get_by_id(user_id)
+    collectives = BelongsTo.get_collectives_for_user(user_id)
+    projects = Participates.get_projects_for_user(user_id)
+    return render_template('home.html', user=user, collectives=collectives, projects=projects)
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    user_id = current_user.id
+    user = Person.get_by_id(user_id)
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        bio = request.form['bio']
+        location = request.form['location']
+        Person.update(user_id, name, email, bio, location)
+        return redirect(url_for('home'))
+    return render_template('profile.html', user=user)
+
+@app.route('/browse_collectives')
+@login_required
+def browse_collectives():
+    collectives = Collective.get_all()
+    return render_template('browse_collectives.html', collectives=collectives)
+
+@app.route('/browse_projects')
+@login_required
+def browse_projects():
+    projects = Project.get_all()
+    return render_template('browse_projects.html', projects=projects)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -49,7 +72,11 @@ def register():
         password = request.form['password']
         bio = request.form['bio']
         location = request.form['location']
-        Person.create(name, email, username, password, bio, location)
+        try:
+            Person.create(name, email, username, password, bio, location)
+            print(f"User {username} created successfully.")
+        except Exception as e:
+            print(f"Error creating user: {e}")
         return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -62,7 +89,7 @@ def login():
         user = Person.get_by_username(username)
         if user is None:
             error = 'User does not exist.'
-        elif user.password != password:
+        elif check_password_hash(user.password, password):
             error = 'Incorrect password.'
         else:
             login_user(user)
@@ -155,4 +182,5 @@ def get_invitations():
     return jsonify(invitations)
 
 if __name__ == "__main__":
+    print("Starting Flask application...")
     app.run(debug=True)

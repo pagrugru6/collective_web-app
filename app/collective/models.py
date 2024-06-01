@@ -1,12 +1,17 @@
 from flask import current_app, g
 from flask_login import UserMixin
 import psycopg2
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Database:
     @staticmethod
     def get_db():
         if 'db' not in g:
-            g.db = psycopg2.connect(current_app.config['DATABASE_URL'])
+            try:
+                g.db = psycopg2.connect(current_app.config['DATABASE_URL'])
+                print("Database connection established.")
+            except Exception as e:
+                print(f"Error establishing database connection: {e}")
         return g.db
 
     @staticmethod
@@ -14,6 +19,8 @@ class Database:
         db = g.pop('db', None)
         if db is not None:
             db.close()
+            print("Database connection closed.")
+
 
     @staticmethod
     def query(query, params=None):
@@ -37,9 +44,6 @@ class Database:
             cursor.execute(query, params)
             return cursor.fetchone()
 
-# No need to define db instance here
-# db = Database()
-
 class Person(UserMixin):
     def __init__(self, id, name, email, username, password, bio, location):
         self.id = id
@@ -62,25 +66,18 @@ class Person(UserMixin):
 
     @staticmethod
     def create(name, email, username, password, bio, location):
-        Database.query("INSERT INTO persons (name, email, username, password, bio, location) VALUES (%s, %s, %s, %s, %s, %s)",
-                       (name, email, username, password, bio, location))
-
-class Collective:
-    def __init__(self, id, name, description, location):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.location = location
+        hashed_password = generate_password_hash(password)
+        Database.query(
+            "INSERT INTO persons (name, email, username, password, bio, location) VALUES (%s, %s, %s, %s, %s, %s)",
+            (name, email, username, hashed_password, bio, location)
+        )
 
     @staticmethod
-    def get_by_id(collective_id):
-        result = Database.fetchone("SELECT * FROM collectives WHERE id = %s", (collective_id,))
-        return Collective(*result) if result else None
-
-    @staticmethod
-    def create(name, description, location):
-        Database.query("INSERT INTO collectives (name, description, location) VALUES (%s, %s, %s)",
-                       (name, description, location))
+    def update(user_id, name, email, bio, location):
+        Database.query(
+            "UPDATE persons SET name = %s, email = %s, bio = %s, location = %s WHERE id = %s",
+            (name, email, bio, location, user_id)
+        )
 
 class Project:
     def __init__(self, id, name, description):
@@ -97,6 +94,28 @@ class Project:
     def create(name, description):
         Database.query("INSERT INTO projects (name, description) VALUES (%s, %s)",
                        (name, description))
+
+
+class Collective:
+    def __init__(self, id, name, description, location):
+        self.id = id
+        self.name = name
+        self.description = description
+        self.location = location
+
+    @staticmethod
+    def get_all():
+        return Database.fetchall("SELECT id, name, description, location FROM collectives")
+    
+class Project:
+    def __init__(self, id, name, description):
+        self.id = id
+        self.name = name
+        self.description = description
+
+    @staticmethod
+    def get_all():
+        return Database.fetchall("SELECT id, name, description FROM projects")
 
 class Skill:
     def __init__(self, id, name, description):
@@ -119,6 +138,12 @@ class BelongsTo:
     def create(person_id, collective_id):
         Database.query("INSERT INTO belongs_to (person_id, collective_id) VALUES (%s, %s)",
                        (person_id, collective_id))
+    @staticmethod
+    def get_collectives_for_user(person_id):
+        return Database.fetchall(
+            "SELECT c.id, c.name, c.description, c.location FROM collectives c JOIN belongs_to b ON c.id = b.collective_id WHERE b.person_id = %s",
+            (person_id,)
+        )
 
 class Possesses:
     @staticmethod
@@ -131,6 +156,12 @@ class Participates:
     def create(person_id, project_id):
         Database.query("INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
                        (person_id, project_id))
+    @staticmethod
+    def get_projects_for_user(person_id):
+        return Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p JOIN participates pa ON p.id = pa.project_id WHERE pa.person_id = %s",
+            (person_id,)
+        )
 
 class Organizes:
     @staticmethod
