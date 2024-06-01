@@ -86,17 +86,17 @@ def logout():
     logout_user()
     return redirect(url_for('startup'))
 
-@app.route('/collectives', methods=['GET', 'POST'])
-@login_required
-def collectives():
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
-        location = request.form['location']
-        Collective.create(name, description, location)
-        return redirect(url_for('collectives'))
-    collectives = Database.fetchall("SELECT * FROM collectives")
-    return render_template('collectives.html', collectives=collectives)
+# @app.route('/collectives', methods=['GET', 'POST'])
+# @login_required
+# def collectives():
+#     if request.method == 'POST':
+#         name = request.form['name']
+#         description = request.form['description']
+#         location = request.form['location']
+#         Collective.create(name, description, location)
+#         return redirect(url_for('collectives'))
+#     collectives = Database.fetchall("SELECT * FROM collectives")
+#     return render_template('collectives.html', collectives=collectives)
 
 @app.route('/projects', methods=['GET', 'POST'])
 @login_required
@@ -114,22 +114,24 @@ def browse_collectives():
     print("Accessing browse_collectives route")
     collectives = Collective.get_all()
     logged_in = current_user.is_authenticated
+    for collective in collectives:
+        print(f"Collective: id={collective.id}, name={collective.name}, description={collective.description}")
     if logged_in:
         print("User is logged in")
     else:
         print("User is not logged in")
     return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
 
+
 @app.route('/create_collective', methods=['GET', 'POST'])
 @login_required
 def create_collective():
-    print("Accessing create_collective route")
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
         location = request.form['location']
-        Collective.create(name, description, location)
-        return redirect(url_for('browse_collectives'))
+        collective_id = Collective.create(name, description, location)
+        return redirect(url_for('collective_home', collective_id=collective_id))
     return render_template('create_collective.html')
 
 @app.route('/browse_projects')
@@ -193,15 +195,16 @@ def get_invitations():
     invitations = Invitation.get_invitations(invitee_id)
     return jsonify(invitations)
 
-if __name__ == "__main__":
-    print("Starting Flask application...")
-    app.run(debug=True)
-
 @app.route('/collective/<int:collective_id>')
 @login_required
 def collective_home(collective_id):
+    print(f"Accessing collective_home route with id={collective_id}")
     collective = Collective.get_by_id(collective_id)
+    if not collective:
+        print(f"Collective with id={collective_id} not found")
+        return "Collective not found", 404
     is_member = BelongsTo.is_member(current_user.id, collective_id)
+    print(f"User is {'a member' if is_member else 'not a member'} of collective {collective_id}")
     projects = Project.get_by_collective(collective_id) if is_member else []
     messages = CollectiveMessage.get_messages(collective_id) if is_member else []
     return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages)
@@ -235,3 +238,7 @@ def create_project(collective_id):
         Project.create(name, description, collective_id)
         return redirect(url_for('collective_home', collective_id=collective_id))
     return render_template('create_project.html', collective_id=collective_id)
+
+if __name__ == "__main__":
+    print("Starting Flask application...")
+    app.run(debug=True)

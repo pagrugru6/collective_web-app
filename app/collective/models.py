@@ -24,25 +24,56 @@ class Database:
 
     @staticmethod
     def query(query, params=None):
-        conn = Database.get_db()
-        with conn.cursor() as cursor:
+        conn = None
+        try:
+            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
+            cursor = conn.cursor()
+            print(f"Executing query: {query} with params: {params}")
             cursor.execute(query, params)
             conn.commit()
             return cursor
-
-    @staticmethod
-    def fetchall(query, params=None):
-        conn = Database.get_db()
-        with conn.cursor() as cursor:
-            cursor.execute(query, params)
-            return cursor.fetchall()
+        except Exception as e:
+            print(f"Database query error: {e}")
+            raise
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def fetchone(query, params=None):
-        conn = Database.get_db()
-        with conn.cursor() as cursor:
+        conn = None
+        try:
+            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
+            cursor = conn.cursor()
+            print(f"Executing query: {query} with params: {params}")
             cursor.execute(query, params)
-            return cursor.fetchone()
+            result = cursor.fetchone()
+            print(f"Query result: {result}")
+            return result
+        except Exception as e:
+            print(f"Database fetchone error: {e}")
+            raise
+        finally:
+            if conn:
+                conn.close()
+
+    @staticmethod
+    def fetchall(query, params=None):
+        conn = None
+        try:
+            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
+            cursor = conn.cursor()
+            print(f"Executing query: {query} with params: {params}")
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            print(f"Query results: {results}")
+            return results
+        except Exception as e:
+            print(f"Database fetchall error: {e}")
+            raise
+        finally:
+            if conn:
+                conn.close()
 
 class Person(UserMixin):
     def __init__(self, id, name, email, username, password, bio, location):
@@ -123,19 +154,28 @@ class Collective:
 
     @staticmethod
     def create(name, description, location):
-        Database.query(
-            "INSERT INTO collectives (name, description, location) VALUES (%s, %s, %s)",
+        result = Database.query(
+            "INSERT INTO collectives (name, description, location) VALUES (%s, %s, %s) RETURNING id",
             (name, description, location)
         )
+        collective_id = result.fetchone()[0]
+        return collective_id
 
     @staticmethod
     def get_all():
-        return [Collective(*row) for row in Database.fetchall("SELECT id, name, description, location FROM collectives")]
+        results = Database.fetchall("SELECT id, name, description, location FROM collectives")
+        return [Collective(*row) for row in results]
 
     @staticmethod
     def get_by_id(collective_id):
+        print(f"Fetching collective with id={collective_id}")
         result = Database.fetchone("SELECT id, name, description, location FROM collectives WHERE id = %s", (collective_id,))
-        return Collective(*result) if result else None
+        if result:
+            print(f"Collective found: {result}")
+            return Collective(*result)
+        print("Collective not found")
+        return None
+
     
 class Project:
     def __init__(self, id, name, description):
