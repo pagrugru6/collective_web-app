@@ -77,26 +77,18 @@ CREATE TABLE requires (
 
 -- Create tables for collective and project messages
 CREATE TABLE collective_messages (
-    id SERIAL PRIMARY KEY,
     collective_id INT REFERENCES collectives(id),
     sender_id INT REFERENCES persons(id),
     message TEXT NOT NULL,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (collective_id, timestamp)
 );
 
+
 CREATE TABLE project_messages (
-    id SERIAL PRIMARY KEY,
     project_id INT REFERENCES projects(id),
     sender_id INT REFERENCES persons(id),
     message TEXT NOT NULL,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create table for invitations
-CREATE TABLE invitations (
-    id SERIAL PRIMARY KEY,
-    collective_id INT REFERENCES collectives(id),
-    invitee_id INT REFERENCES persons(id),
-    inviter_id INT REFERENCES persons(id),
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (project_id, timestamp)
 );
