@@ -13,7 +13,7 @@
     {% endif %}
     <ul>
     {% for collective in collectives %}
-        <li><a href="{{ url_for('collective_home', collective_id=collective[0]) }}">{{ collective[1] }}</a> - {{ collective[2] }}</li>
+        <li><a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a> - {{ collective.description }}</li>
     {% endfor %}
     </ul>
     {% if logged_in %}

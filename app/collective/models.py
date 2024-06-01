@@ -66,7 +66,7 @@ class Person(UserMixin):
 
     @staticmethod
     def create(name, email, username, password, bio, location):
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         Database.query(
             "INSERT INTO persons (name, email, username, password, bio, location) VALUES (%s, %s, %s, %s, %s, %s)",
             (name, email, username, hashed_password, bio, location)
@@ -130,7 +130,7 @@ class Collective:
 
     @staticmethod
     def get_all():
-        return Database.fetchall("SELECT id, name, description, location FROM collectives")
+        return [Collective(*row) for row in Database.fetchall("SELECT id, name, description, location FROM collectives")]
 
     @staticmethod
     def get_by_id(collective_id):

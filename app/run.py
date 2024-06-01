@@ -20,10 +20,6 @@ def load_user(user_id):
 def close_db(exception):
     Database.close_db()
 
-@app.before_request
-def before_request():
-    pass
-
 @app.route('/')
 def startup():
     return render_template('startup.html')
@@ -51,34 +47,6 @@ def profile():
         return redirect(url_for('home'))
     return render_template('profile.html', user=user)
 
-@app.route('/browse_collectives')
-def browse_collectives():
-    print("Accessing browse_collectives route")
-    collectives = Collective.get_all()
-    logged_in = current_user.is_authenticated
-    if logged_in:
-        print("User is logged in")
-    else:
-        print("User is not logged in")
-    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
-
-@app.route('/create_collective', methods=['GET', 'POST'])
-@login_required
-def create_collective():
-    print("Accessing create_collective route")
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
-        location = request.form['location']
-        Collective.create(name, description, location)
-        return redirect(url_for('browse_collectives'))
-    return render_template('create_collective.html')
-
-@app.route('/browse_projects')
-def browse_projects():
-    projects = Project.get_all()
-    return render_template('browse_projects.html', projects=projects)
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -105,7 +73,7 @@ def login():
         user = Person.get_by_username(username)
         if user is None:
             error = 'User does not exist.'
-        elif check_password_hash(user.password, password):
+        elif not check_password_hash(user.password, password):
             error = 'Incorrect password.'
         else:
             login_user(user)
@@ -140,6 +108,34 @@ def projects():
         return redirect(url_for('projects'))
     projects = Database.fetchall("SELECT * FROM projects")
     return render_template('projects.html', projects=projects)
+
+@app.route('/browse_collectives')
+def browse_collectives():
+    print("Accessing browse_collectives route")
+    collectives = Collective.get_all()
+    logged_in = current_user.is_authenticated
+    if logged_in:
+        print("User is logged in")
+    else:
+        print("User is not logged in")
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
+
+@app.route('/create_collective', methods=['GET', 'POST'])
+@login_required
+def create_collective():
+    print("Accessing create_collective route")
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        location = request.form['location']
+        Collective.create(name, description, location)
+        return redirect(url_for('browse_collectives'))
+    return render_template('create_collective.html')
+
+@app.route('/browse_projects')
+def browse_projects():
+    projects = Project.get_all()
+    return render_template('browse_projects.html', projects=projects)
 
 @app.route('/send_collective_message', methods=['POST'])
 @login_required

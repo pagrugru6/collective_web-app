@@ -20,7 +20,7 @@ CREATE TABLE persons (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     bio VARCHAR(500),
     location VARCHAR(100)
 );
