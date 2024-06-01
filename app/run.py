@@ -134,6 +134,21 @@ def create_collective():
         return redirect(url_for('collective_home', collective_id=collective_id))
     return render_template('create_collective.html')
 
+@app.route('/collective/<int:collective_id>/create_project', methods=['GET', 'POST'])
+@login_required
+def create_project(collective_id):
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        project_id = Project.create(name, description)
+        # Assuming there is a relationship table `organizes` with collective_id and project_id
+        Database.execute(
+            "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
+            (collective_id, project_id)
+        )
+        return redirect(url_for('collective_home', collective_id=collective_id))
+    return render_template('create_project.html', collective_id=collective_id)
+
 @app.route('/browse_projects')
 def browse_projects():
     projects = Project.get_all()
@@ -222,22 +237,6 @@ def project_home(project_id):
 def join_collective(collective_id):
     BelongsTo.create(current_user.id, collective_id)
     return redirect(url_for('collective_home', collective_id=collective_id))
-
-@app.route('/join_project/<int:project_id>', methods=['POST'])
-@login_required
-def join_project(project_id):
-    Participates.create(current_user.id, project_id)
-    return redirect(url_for('project_home', project_id=project_id))
-
-@app.route('/create_project/<int:collective_id>', methods=['GET', 'POST'])
-@login_required
-def create_project(collective_id):
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
-        Project.create(name, description, collective_id)
-        return redirect(url_for('collective_home', collective_id=collective_id))
-    return render_template('create_project.html', collective_id=collective_id)
 
 if __name__ == "__main__":
     print("Starting Flask application...")

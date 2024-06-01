@@ -21,12 +21,11 @@ class Database:
             db.close()
             print("Database connection closed.")
 
-
     @staticmethod
     def query(query, params=None):
-        conn = None
+        conn = Database.get_db()
+        cursor = None
         try:
-            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
             cursor = conn.cursor()
             print(f"Executing query: {query} with params: {params}")
             cursor.execute(query, params)
@@ -36,14 +35,30 @@ class Database:
             print(f"Database query error: {e}")
             raise
         finally:
-            if conn:
-                conn.close()
+            if cursor:
+                cursor.close()
+
+    @staticmethod
+    def execute(query, params=None):
+        conn = Database.get_db()
+        cursor = None
+        try:
+            cursor = conn.cursor()
+            print(f"Executing query: {query} with params: {params}")
+            cursor.execute(query, params)
+            conn.commit()
+        except Exception as e:
+            print(f"Database execute error: {e}")
+            raise
+        finally:
+            if cursor:
+                cursor.close()
 
     @staticmethod
     def fetchone(query, params=None):
-        conn = None
+        conn = Database.get_db()
+        cursor = None
         try:
-            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
             cursor = conn.cursor()
             print(f"Executing query: {query} with params: {params}")
             cursor.execute(query, params)
@@ -54,14 +69,14 @@ class Database:
             print(f"Database fetchone error: {e}")
             raise
         finally:
-            if conn:
-                conn.close()
+            if cursor:
+                cursor.close()
 
     @staticmethod
     def fetchall(query, params=None):
-        conn = None
+        conn = Database.get_db()
+        cursor = None
         try:
-            conn = psycopg2.connect(current_app.config['DATABASE_URL'])
             cursor = conn.cursor()
             print(f"Executing query: {query} with params: {params}")
             cursor.execute(query, params)
@@ -72,8 +87,8 @@ class Database:
             print(f"Database fetchall error: {e}")
             raise
         finally:
-            if conn:
-                conn.close()
+            if cursor:
+                cursor.close()
 
 class Person(UserMixin):
     def __init__(self, id, name, email, username, password, bio, location):
@@ -117,33 +132,27 @@ class Project:
         self.description = description
 
     @staticmethod
-    def create(name, description, collective_id):
-        Database.query(
+    def create(name, description):
+        cursor = Database.query(
             "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
             (name, description)
         )
-        project_id = Database.fetchone(
-            "SELECT id FROM projects WHERE name = %s AND description = %s",
-            (name, description)
-        )[0]
-        Organizes.create(collective_id, project_id)
+        project_id = cursor.fetchone()[0]
+        return project_id
 
     @staticmethod
     def get_all():
-        return Database.fetchall("SELECT id, name, description FROM projects")
+        results = Database.fetchall("SELECT id, name, description FROM projects")
+        return [Project(*row) for row in results]
 
     @staticmethod
     def get_by_collective(collective_id):
-        return Database.fetchall(
-            "SELECT p.id, p.name, p.description FROM projects p JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
+        results = Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p "
+            "JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
             (collective_id,)
         )
-
-    @staticmethod
-    def get_by_id(project_id):
-        result = Database.fetchone("SELECT * FROM projects WHERE id = %s", (project_id,))
-        return Project(*result) if result else None
-
+        return [Project(*row) for row in results]
 
 class Collective:
     def __init__(self, id, name, description, location):
@@ -184,8 +193,27 @@ class Project:
         self.description = description
 
     @staticmethod
+    def create(name, description):
+        result = Database.query(
+            "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
+            (name, description)
+        )
+        project_id = result.fetchone()[0]
+        return project_id
+
+    @staticmethod
     def get_all():
-        return Database.fetchall("SELECT id, name, description FROM projects")
+        results = Database.fetchall("SELECT id, name, description FROM projects")
+        return [Project(*row) for row in results]
+
+    @staticmethod
+    def get_by_collective(collective_id):
+        results = Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p "
+            "JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
+            (collective_id,)
+        )
+        return [Project(*row) for row in results]
 
 class Skill:
     def __init__(self, id, name, description):
