@@ -55,14 +55,19 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    error = None
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         user = Person.get_by_username(username)
-        if user and user.password == password:
+        if user is None:
+            error = 'User does not exist.'
+        elif user.password != password:
+            error = 'Incorrect password.'
+        else:
             login_user(user)
             return redirect(url_for('home'))
-    return render_template('login.html')
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 @login_required
