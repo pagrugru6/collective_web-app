@@ -143,3 +143,82 @@ class Requires:
     def create(project_id, skill_id):
         Database.query("INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
                        (project_id, skill_id))
+
+
+class CollectiveMessage:
+    def __init__(self, id, collective_id, sender_id, message, timestamp):
+        self.id = id
+        self.collective_id = collective_id
+        self.sender_id = sender_id
+        self.message = message
+        self.timestamp = timestamp
+
+    @staticmethod
+    def create(collective_id, sender_id, message):
+        Database.query(
+            "INSERT INTO collective_messages (collective_id, sender_id, message) VALUES (%s, %s, %s)",
+            (collective_id, sender_id, message)
+        )
+
+    @staticmethod
+    def get_messages(collective_id, last_message_id=None):
+        if last_message_id:
+            return Database.fetchall(
+                "SELECT * FROM collective_messages WHERE collective_id = %s AND id > %s ORDER BY timestamp ASC",
+                (collective_id, last_message_id)
+            )
+        else:
+            return Database.fetchall(
+                "SELECT * FROM collective_messages WHERE collective_id = %s ORDER BY timestamp ASC",
+                (collective_id,)
+            )
+
+class ProjectMessage:
+    def __init__(self, id, project_id, sender_id, message, timestamp):
+        self.id = id
+        self.project_id = project_id
+        self.sender_id = sender_id
+        self.message = message
+        self.timestamp = timestamp
+
+    @staticmethod
+    def create(project_id, sender_id, message):
+        Database.query(
+            "INSERT INTO project_messages (project_id, sender_id, message) VALUES (%s, %s, %s)",
+            (project_id, sender_id, message)
+        )
+
+    @staticmethod
+    def get_messages(project_id, last_message_id=None):
+        if last_message_id:
+            return Database.fetchall(
+                "SELECT * FROM project_messages WHERE project_id = %s AND id > %s ORDER BY timestamp ASC",
+                (project_id, last_message_id)
+            )
+        else:
+            return Database.fetchall(
+                "SELECT * FROM project_messages WHERE project_id = %s ORDER BY timestamp ASC",
+                (project_id,)
+            )
+
+class Invitation:
+    def __init__(self, id, collective_id, invitee_id, inviter_id, timestamp):
+        self.id = id
+        self.collective_id = collective_id
+        self.invitee_id = invitee_id
+        self.inviter_id = inviter_id
+        self.timestamp = timestamp
+
+    @staticmethod
+    def create(collective_id, invitee_id, inviter_id):
+        Database.query(
+            "INSERT INTO invitations (collective_id, invitee_id, inviter_id) VALUES (%s, %s, %s)",
+            (collective_id, invitee_id, inviter_id)
+        )
+
+    @staticmethod
+    def get_invitations(invitee_id):
+        return Database.fetchall(
+            "SELECT * FROM invitations WHERE invitee_id = %s ORDER BY timestamp ASC",
+            (invitee_id,)
+        )

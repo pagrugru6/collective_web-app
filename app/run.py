@@ -1,8 +1,8 @@
 import os
 import psycopg2
-from flask import Flask, render_template, redirect, url_for, request, g
-from flask_login import LoginManager, login_user, login_required, logout_user
-from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, Database
+from flask import Flask, render_template, redirect, url_for, request, jsonify, g
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Invitation, Database
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -93,7 +93,61 @@ def projects():
     projects = Database.fetchall("SELECT * FROM projects")
     return render_template('projects.html', projects=projects)
 
-# Similar routes for skills, participating in projects, etc.
+@app.route('/send_collective_message', methods=['POST'])
+@login_required
+def send_collective_message():
+    sender_id = current_user.id
+    collective_id = request.form['collective_id']
+    message = request.form['message']
+    CollectiveMessage.create(collective_id, sender_id, message)
+    return '', 204  # No Content
+
+@app.route('/get_collective_messages', methods=['GET'])
+@login_required
+def get_collective_messages():
+    collective_id = request.args.get('collective_id')
+    last_message_id = request.args.get('last_message_id')
+    if last_message_id:
+        messages = CollectiveMessage.get_messages(collective_id, last_message_id)
+    else:
+        messages = CollectiveMessage.get_messages(collective_id)
+    return jsonify(messages)
+
+@app.route('/send_project_message', methods=['POST'])
+@login_required
+def send_project_message():
+    sender_id = current_user.id
+    project_id = request.form['project_id']
+    message = request.form['message']
+    ProjectMessage.create(project_id, sender_id, message)
+    return '', 204  # No Content
+
+@app.route('/get_project_messages', methods=['GET'])
+@login_required
+def get_project_messages():
+    project_id = request.args.get('project_id')
+    last_message_id = request.args.get('last_message_id')
+    if last_message_id:
+        messages = ProjectMessage.get_messages(project_id, last_message_id)
+    else:
+        messages = ProjectMessage.get_messages(project_id)
+    return jsonify(messages)
+
+@app.route('/invite_to_collective', methods=['POST'])
+@login_required
+def invite_to_collective():
+    inviter_id = current_user.id
+    collective_id = request.form['collective_id']
+    invitee_id = request.form['invitee_id']
+    Invitation.create(collective_id, invitee_id, inviter_id)
+    return '', 204  # No Content
+
+@app.route('/get_invitations', methods=['GET'])
+@login_required
+def get_invitations():
+    invitee_id = current_user.id
+    invitations = Invitation.get_invitations(invitee_id)
+    return jsonify(invitations)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -10,6 +10,10 @@ DROP TABLE IF EXISTS persons CASCADE;
 DROP TABLE IF EXISTS collectives CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS skills CASCADE;
+DROP TABLE IF EXISTS collective_messages CASCADE;
+DROP TABLE IF EXISTS project_messages CASCADE;
+DROP TABLE IF EXISTS invitations CASCADE;
+
 
 CREATE TABLE persons (
     id SERIAL PRIMARY KEY,
@@ -68,4 +72,31 @@ CREATE TABLE requires (
     project_id INT REFERENCES projects(id),
     skill_id INT REFERENCES skills(id),
     PRIMARY KEY (project_id, skill_id)
+);
+
+
+-- Create tables for collective and project messages
+CREATE TABLE collective_messages (
+    id SERIAL PRIMARY KEY,
+    collective_id INT REFERENCES collectives(id),
+    sender_id INT REFERENCES persons(id),
+    message TEXT NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE project_messages (
+    id SERIAL PRIMARY KEY,
+    project_id INT REFERENCES projects(id),
+    sender_id INT REFERENCES persons(id),
+    message TEXT NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create table for invitations
+CREATE TABLE invitations (
+    id SERIAL PRIMARY KEY,
+    collective_id INT REFERENCES collectives(id),
+    invitee_id INT REFERENCES persons(id),
+    inviter_id INT REFERENCES persons(id),
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
