@@ -11,6 +11,10 @@
         <li>{{ project.name }} - {{ project.description }}</li>
     {% endfor %}
     </ul>
-    <a href="{{ url_for('home') }}">Back to Home</a>
+    {% if logged_in %}
+        <a href="{{ url_for('home') }}">Back to Home</a>
+    {% else %}
+        <a href="{{ url_for('startup') }}">Back to Startup Screen</a>
+    {% endif %}
 </body>
 </html>

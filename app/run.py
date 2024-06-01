@@ -75,7 +75,6 @@ def create_collective():
     return render_template('create_collective.html')
 
 @app.route('/browse_projects')
-@login_required
 def browse_projects():
     projects = Project.get_all()
     return render_template('browse_projects.html', projects=projects)
