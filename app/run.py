@@ -121,7 +121,8 @@ def create_collective():
         description = request.form['description']
         location = request.form['location']
         collective_id = Collective.create(name, description, location)
-        return redirect(url_for('collective_home', collective_id=collective_id))
+        BelongsTo.create(current_user.id, collective_id)
+        return redirect(url_for('collective_home',collective_id=collective_id))
     return render_template('create_collective.html')
 
 @app.route('/collective/<int:collective_id>/create_project', methods=['GET', 'POST'])
@@ -131,6 +132,7 @@ def create_project(collective_id):
         name = request.form['name']
         description = request.form['description']
         project_id = Project.create(name, description)
+        Participates.create(current_user.id, project_id)
         
         # Link the project to the main collective
         Database.execute(
@@ -145,7 +147,7 @@ def create_project(collective_id):
                 "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
                 (co_collective_id, project_id)
             )
-        
+        # BelongsTo.create(current_user.id, project_id)
         return redirect(url_for('collective_home', collective_id=collective_id))
     
     all_collectives = Collective.get_all()
