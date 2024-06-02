@@ -14,9 +14,7 @@
                     const chatBox = document.getElementById('chat-box');
                     data.forEach(message => {
                         const messageElement = document.createElement('div');
-                        const date = new Date(message.timestamp);
-                        const formattedTimestamp = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        messageElement.textContent = `${message.sender_username}: ${message.message} [${formattedTimestamp}]`;
+                        messageElement.textContent = `${message.sender_id}: ${message.message}`;
                         chatBox.appendChild(messageElement);
                         lastMessageId = message.id;
                     });
