@@ -46,16 +46,53 @@ def home():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    user_id = current_user.id
-    user = Person.get_by_id(user_id)
+    user = current_user
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
+        username = request.form['username']
         bio = request.form['bio']
         location = request.form['location']
-        Person.update(user_id, name, email, bio, location)
+        existing_skills = request.form.getlist('existing_skills')
+        new_skill_name = request.form.get('new_skill_name')
+        new_skill_description = request.form.get('new_skill_description')
+
+        Database.execute(
+            "UPDATE persons SET name = %s, email = %s, username = %s, bio = %s, location = %s WHERE id = %s",
+            (name, email, username, bio, location, user.id)
+        )
+
+        # Remove all existing skills
+        Database.execute(
+            "DELETE FROM possesses WHERE person_id = %s",
+            (user.id,)
+        )
+
+        # Add existing skills to the user
+        for skill_id in existing_skills:
+            Database.execute(
+                "INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
+                (user.id, skill_id)
+            )
+
+        # Add new skill to the user if provided
+        if new_skill_name:
+            skill = Skill.get_by_name(new_skill_name)
+            if not skill:
+                skill_id = Skill.create(new_skill_name, new_skill_description)
+            else:
+                skill_id = skill.id
+            Database.execute(
+                "INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
+                (user.id, skill_id)
+            )
+
         return redirect(url_for('home'))
-    return render_template('profile.html', user=user)
+
+    skills = Skill.get_all()
+    user_skill_ids = [skill.id for skill in user.get_skills()]
+    return render_template('profile.html', user=user, skills=skills, user_skill_ids=user_skill_ids)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -66,13 +103,35 @@ def register():
         password = request.form['password']
         bio = request.form['bio']
         location = request.form['location']
-        try:
-            Person.create(name, email, username, password, bio, location)
-            print(f"User {username} created successfully.")
-        except Exception as e:
-            print(f"Error creating user: {e}")
+        existing_skills = request.form.getlist('existing_skills')
+        new_skill_name = request.form.get('new_skill_name')
+        new_skill_description = request.form.get('new_skill_description')
+
+        user_id = Person.create(name, email, username, password, bio, location)
+        
+        # Add existing skills to the user
+        for skill_id in existing_skills:
+            Database.execute(
+                "INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
+                (user_id, skill_id)
+            )
+
+        # Add new skill to the user if provided
+        if new_skill_name:
+            skill = Skill.get_by_name(new_skill_name)
+            if not skill:
+                skill_id = Skill.create(new_skill_name, new_skill_description)
+            else:
+                skill_id = skill.id
+            Database.execute(
+                "INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
+                (user_id, skill_id)
+            )
+
         return redirect(url_for('login'))
-    return render_template('register.html')
+
+    skills = Skill.get_all()
+    return render_template('create_profile.html', skills=skills)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -139,6 +198,9 @@ def create_project(collective_id):
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
+        existing_skills = request.form.getlist('existing_skills')
+        new_skill_name = request.form.get('new_skill_name')
+        new_skill_description = request.form.get('new_skill_description')
         project_id = Project.create(name, description)
         Participates.create(current_user.id, project_id)
         
@@ -155,11 +217,31 @@ def create_project(collective_id):
                 "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
                 (co_collective_id, project_id)
             )
-        # BelongsTo.create(current_user.id, project_id)
+        
+        # Add existing skills to the project
+        for skill_id in existing_skills:
+            Database.execute(
+                "INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
+                (project_id, skill_id)
+            )
+
+        # Add new skill to the project if provided
+        if new_skill_name:
+            skill = Skill.get_by_name(new_skill_name)
+            if not skill:
+                skill_id = Skill.create(new_skill_name, new_skill_description)
+            else:
+                skill_id = skill.id
+            Database.execute(
+                "INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
+                (project_id, skill_id)
+            )
+            
         return redirect(url_for('collective_home', collective_id=collective_id))
     
+    skills = Skill.get_all()
     all_collectives = Collective.get_all()
-    return render_template('create_project.html', collective_id=collective_id, all_collectives=all_collectives)
+    return render_template('create_project.html', collective_id=collective_id, all_collectives=all_collectives, skills=skills)
 
 @app.route('/collective/<int:collective_id>/post_message', methods=['POST'])
 @login_required
@@ -289,6 +371,9 @@ def edit_project(project_id):
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
+        existing_skills = request.form.getlist('existing_skills')
+        new_skill_name = request.form.get('new_skill_name')
+        new_skill_description = request.form.get('new_skill_description')
         Database.execute(
             "UPDATE projects SET name = %s, description = %s WHERE id = %s",
             (name, description, project_id)
@@ -302,14 +387,98 @@ def edit_project(project_id):
                 "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
                 (co_collective_id, project_id)
             )
+        # Remove all existing skills
+        Database.execute(
+            "DELETE FROM requires WHERE project_id = %s",
+            (project_id,)
+        )
+
+        # Add existing skills to the project
+        for skill_id in existing_skills:
+            Database.execute(
+                "INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
+                (project_id, skill_id)
+            )
+
+        # Add new skill to the project if provided
+        if new_skill_name:
+            skill = Skill.get_by_name(new_skill_name)
+            if not skill:
+                skill_id = Skill.create(new_skill_name, new_skill_description)
+            else:
+                skill_id = skill.id
+            Database.execute(
+                "INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
+                (project_id, skill_id)
+            )
         
         return redirect(url_for('project_home', project_id=project_id))
     
+    skills = Skill.get_all()
+    project_skill_ids = [skill.id for skill in project.get_skills()]
     all_collectives = Collective.get_all()
     project.collective_ids = [c['id'] for c in project.collectives]
-    return render_template('edit_project.html', project=project, all_collectives=all_collectives)
+    return render_template('edit_project.html', project=project, all_collectives=all_collectives,skills=skills, project_skill_ids=project_skill_ids)
 
+@app.route('/profile/add_skill', methods=['GET', 'POST'])
+@login_required
+def add_skill():
+    if request.method == 'POST':
+        existing_skill_id = request.form.get('existing_skill')
+        skill_name = request.form.get('skill_name')
+        skill_description = request.form.get('skill_description')
 
+        if existing_skill_id:
+            skill_id = existing_skill_id
+        else:
+            # Check if the skill already exists
+            skill = Skill.get_by_name(skill_name)
+            if not skill:
+                # Create the new skill if it doesn't exist
+                skill_id = Skill.create(skill_name, skill_description)
+            else:
+                skill_id = skill.id
+
+        # Add the skill to the user's profile
+        Database.execute(
+            "INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
+            (current_user.id, skill_id)
+        )
+        
+        return redirect(url_for('profile'))
+
+    skills = Skill.get_all()
+    return render_template('add_skill.html', skills=skills)
+
+@app.route('/project/<int:project_id>/add_skill', methods=['GET', 'POST'])
+@login_required
+def add_project_skill(project_id):
+    if request.method == 'POST':
+        existing_skill_id = request.form.get('existing_skill')
+        skill_name = request.form.get('skill_name')
+        skill_description = request.form.get('skill_description')
+
+        if existing_skill_id:
+            skill_id = existing_skill_id
+        else:
+            # Check if the skill already exists
+            skill = Skill.get_by_name(skill_name)
+            if not skill:
+                # Create the new skill if it doesn't exist
+                skill_id = Skill.create(skill_name, skill_description)
+            else:
+                skill_id = skill.id
+
+        # Add the skill to the project's requirements
+        Database.execute(
+            "INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
+            (project_id, skill_id)
+        )
+        
+        return redirect(url_for('project_home', project_id=project_id))
+
+    skills = Skill.get_all()
+    return render_template('add_project_skill.html', skills=skills, project_id=project_id)
 
 
 if __name__ == "__main__":

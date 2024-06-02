@@ -124,6 +124,13 @@ class Person(UserMixin):
             "UPDATE persons SET name = %s, email = %s, bio = %s, location = %s WHERE id = %s",
             (name, email, bio, location, user_id)
         )
+    def get_skills(self):
+        results = Database.fetchall(
+            "SELECT s.id, s.name, s.description FROM skills s "
+            "JOIN possesses p ON s.id = p.skill_id WHERE p.person_id = %s",
+            (self.id,)
+        )
+        return [Skill(*row) for row in results]
 
 class Project:
     def __init__(self, id, name, description):
@@ -153,6 +160,14 @@ class Project:
             (collective_id,)
         )
         return [Project(*row) for row in results]
+    
+    def get_skills(self):
+        results = Database.fetchall(
+            "SELECT s.id, s.name, s.description FROM skills s "
+            "JOIN requires r ON s.id = r.skill_id WHERE r.project_id = %s",
+            (self.id,)
+        )
+        return [Skill(*row) for row in results]
 
 class Collective:
     def __init__(self, id, name, description, location):
@@ -267,14 +282,25 @@ class Skill:
         self.description = description
 
     @staticmethod
-    def get_by_id(skill_id):
-        result = Database.fetchone("SELECT * FROM skills WHERE id = %s", (skill_id,))
-        return Skill(*result) if result else None
+    def create(name, description):
+        result = Database.fetchone(
+            "INSERT INTO skills (name, description) VALUES (%s, %s) RETURNING id",
+            (name, description)
+        )
+        return result[0]
 
     @staticmethod
-    def create(name, description):
-        Database.query("INSERT INTO skills (name, description) VALUES (%s, %s)",
-                       (name, description))
+    def get_by_name(name):
+        result = Database.fetchone("SELECT id, name, description FROM skills WHERE name = %s", (name,))
+        if result:
+            return Skill(*result)
+        return None
+
+    @staticmethod
+    def get_all():
+        results = Database.fetchall("SELECT id, name, description FROM skills")
+        return [Skill(*row) for row in results]
+
 
 class BelongsTo:
     @staticmethod
