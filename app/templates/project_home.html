@@ -12,7 +12,7 @@
         <h2>Forum</h2>
         <ul>
         {% for message in messages %}
-            <li>{{ message.message }} - {{ message.sender_id }} - {{ message.timestamp }}</li>
+            <li>{{ message.message }} - {{ message.sender_name }} - {{ message.timestamp | short_timestamp}}</li>
         {% endfor %}
         </ul>
         <form action="{{ url_for('post_project_message', project_id=project.id) }}" method="POST">

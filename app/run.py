@@ -4,6 +4,7 @@ from flask import Flask, render_template, redirect, url_for, request, jsonify, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime;
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -15,6 +16,13 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return Person.get_by_id(user_id)
+
+@app.template_filter('short_timestamp')
+def short_timestamp_filter(timestamp):
+    return timestamp.strftime('%Y-%m-%d %H:%M')
+
+# Ensure the filter is registered with the app
+app.jinja_env.filters['short_timestamp'] = short_timestamp_filter
 
 @app.teardown_appcontext
 def close_db(exception):
