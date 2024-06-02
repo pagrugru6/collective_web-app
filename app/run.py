@@ -154,17 +154,17 @@ def create_project(collective_id):
 @app.route('/collective/<int:collective_id>/post_message', methods=['POST'])
 @login_required
 def post_collective_message(collective_id):
-    user_id = current_user.id
+    user_name = current_user.username
     message_content = request.form['message']
-    CollectiveMessage.create(collective_id, user_id, message_content)
+    CollectiveMessage.create(collective_id, user_name, message_content)
     return redirect(url_for('collective_home', collective_id=collective_id))
 
 @app.route('/project/<int:project_id>/post_message', methods=['POST'])
 @login_required
 def post_project_message(project_id):
-    user_id = current_user.id
+    user_name = current_user.username
     message_content = request.form['message']
-    ProjectMessage.create(project_id, user_id, message_content)
+    ProjectMessage.create(project_id, user_name, message_content)
     return redirect(url_for('project_home', project_id=project_id))
 
 @app.route('/collective/<int:collective_id>')

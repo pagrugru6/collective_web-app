@@ -76,16 +76,14 @@ CREATE TABLE requires (
 
 CREATE TABLE collective_messages (
     collective_id INT REFERENCES collectives(id) ON DELETE CASCADE,
-    sender_id INT REFERENCES persons(id) ON DELETE CASCADE,
 	sender_name VARCHAR(100) NOT NULL REFERENCES persons(username) ON DELETE CASCADE,
     message TEXT NOT NULL,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,ß
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (collective_id, timestamp)
 );
 
 CREATE TABLE project_messages (
     project_id INT REFERENCES projects(id) ON DELETE CASCADE,
-    sender_id INT REFERENCES persons(id) ON DELETE CASCADE,
 	sender_name VARCHAR(100) NOT NULL REFERENCES persons(username) ON DELETE CASCADE,
     message TEXT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

@@ -342,45 +342,45 @@ class Requires:
 
 
 class CollectiveMessage:
-    def __init__(self, collective_id, timestamp, sender_id, message):
+    def __init__(self, collective_id, timestamp, sender_name, message):
         self.collective_id = collective_id
         self.timestamp = timestamp
-        self.sender_id = sender_id
+        self.sender_name = sender_name
         self.message = message
 
     @staticmethod
-    def create(collective_id, sender_id, message):
+    def create(collective_id, sender_name, message):
         Database.execute(
-            "INSERT INTO collective_messages (collective_id, sender_id, message) VALUES (%s, %s, %s)",
-            (collective_id, sender_id, message)
+            "INSERT INTO collective_messages (collective_id, sender_name, message) VALUES (%s, %s, %s)",
+            (collective_id, sender_name, message)
         )
 
     @staticmethod
     def get_messages(collective_id):
         results = Database.fetchall(
-            "SELECT collective_id, timestamp, sender_id, message FROM collective_messages WHERE collective_id = %s ORDER BY timestamp",
+            "SELECT collective_id, timestamp, sender_name, message FROM collective_messages WHERE collective_id = %s ORDER BY timestamp",
             (collective_id,)
         )
         return [CollectiveMessage(*row) for row in results]
 
 class ProjectMessage:
-    def __init__(self, project_id, timestamp, sender_id, message):
+    def __init__(self, project_id, timestamp, sender_name, message):
         self.project_id = project_id
         self.timestamp = timestamp
-        self.sender_id = sender_id
+        self.sender_name = sender_name
         self.message = message
 
     @staticmethod
-    def create(project_id, sender_id, message):
+    def create(project_id, sender_name, message):
         Database.execute(
-            "INSERT INTO project_messages (project_id, sender_id, message) VALUES (%s, %s, %s)",
-            (project_id, sender_id, message)
+            "INSERT INTO project_messages (project_id, sender_name, message) VALUES (%s, %s, %s)",
+            (project_id, sender_name, message)
         )
 
     @staticmethod
     def get_messages(project_id):
         results = Database.fetchall(
-            "SELECT project_id, timestamp, sender_id, message FROM project_messages WHERE project_id = %s ORDER BY timestamp",
+            "SELECT project_id, timestamp, sender_name, message FROM project_messages WHERE project_id = %s ORDER BY timestamp",
             (project_id,)
         )
         return [ProjectMessage(*row) for row in results]
