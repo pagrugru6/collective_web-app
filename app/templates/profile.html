@@ -17,6 +17,9 @@
         <input type="text" id="location" name="location" value="{{ user.location }}"><br>
         <button type="submit">Save</button>
     </form>
+    <form action="{{ url_for('delete_profile') }}" method="POST">
+        <button type="submit">Delete Profile</button>
+    </form>
     <a href="{{ url_for('home') }}">Back to Home</a>
 </body>
 </html>

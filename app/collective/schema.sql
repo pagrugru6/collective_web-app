@@ -45,49 +45,46 @@ CREATE TABLE skills (
 );
 
 CREATE TABLE belongs_to (
-    person_id INT REFERENCES persons(id),
-    collective_id INT REFERENCES collectives(id),
+    person_id INT REFERENCES persons(id) ON DELETE CASCADE,
+    collective_id INT REFERENCES collectives(id) ON DELETE CASCADE,
     PRIMARY KEY (person_id, collective_id)
 );
 
 CREATE TABLE possesses (
-    person_id INT REFERENCES persons(id),
-    skill_id INT REFERENCES skills(id),
+    person_id INT REFERENCES persons(id) ON DELETE CASCADE,
+    skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
     PRIMARY KEY (person_id, skill_id)
 );
 
 CREATE TABLE participates (
-    person_id INT REFERENCES persons(id),
-    project_id INT REFERENCES projects(id),
+    person_id INT REFERENCES persons(id) ON DELETE CASCADE,
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
     PRIMARY KEY (person_id, project_id)
 );
 
 CREATE TABLE organizes (
-    collective_id INT REFERENCES collectives(id),
-    project_id INT REFERENCES projects(id),
+    collective_id INT REFERENCES collectives(id) ON DELETE CASCADE,
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
     PRIMARY KEY (collective_id, project_id)
 );
 
 CREATE TABLE requires (
-    project_id INT REFERENCES projects(id),
-    skill_id INT REFERENCES skills(id),
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+    skill_id INT REFERENCES skills(id) ON DELETE CASCADE,
     PRIMARY KEY (project_id, skill_id)
 );
 
-
--- Create tables for collective and project messages
 CREATE TABLE collective_messages (
-    collective_id INT REFERENCES collectives(id),
-    sender_id INT REFERENCES persons(id),
+    collective_id INT REFERENCES collectives(id) ON DELETE CASCADE,
+    sender_id INT REFERENCES persons(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (collective_id, timestamp)
 );
 
-
 CREATE TABLE project_messages (
-    project_id INT REFERENCES projects(id),
-    sender_id INT REFERENCES persons(id),
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+    sender_id INT REFERENCES persons(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (project_id, timestamp)

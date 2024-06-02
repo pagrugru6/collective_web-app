@@ -19,6 +19,9 @@
             <textarea name="message" placeholder="Enter your message"></textarea>
             <button type="submit">Send</button>
         </form>
+        <form action="{{ url_for('edit_project', project_id=project.id) }}" method="GET">
+            <button type="submit">Edit Project</button>
+        </form>
     {% else %}
         <form action="{{ url_for('join_project', project_id=project.id) }}" method="POST">
             <button type="submit">Join Project</button>

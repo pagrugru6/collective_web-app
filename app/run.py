@@ -206,6 +206,74 @@ def join_project(project_id):
         )
     return redirect(url_for('project_home', project_id=project_id))
 
+@app.route('/delete_profile', methods=['POST'])
+@login_required
+def delete_profile():
+    user_id = current_user.id
+    Database.execute("DELETE FROM persons WHERE id = %s", (user_id,))
+    logout_user()
+    return redirect(url_for('startup'))
+
+@app.route('/collective/<int:collective_id>/delete', methods=['POST'])
+@login_required
+def delete_collective(collective_id):
+    user_id = current_user.id
+    if BelongsTo.is_member(user_id, collective_id):
+        Database.execute("DELETE FROM collectives WHERE id = %s", (collective_id,))
+        Database.execute("DELETE FROM belongs_to WHERE collective_id = %s", (collective_id,))
+        Database.execute("DELETE FROM organizes WHERE collective_id = %s", (collective_id,))
+        Database.execute("DELETE FROM collective_messages WHERE collective_id = %s", (collective_id,))
+    return redirect(url_for('home'))
+
+@app.route('/project/<int:project_id>/delete', methods=['POST'])
+@login_required
+def delete_project(project_id):
+    user_id = current_user.id
+    if Participates.is_participant(user_id, project_id):
+        Database.execute("DELETE FROM projects WHERE id = %s", (project_id,))
+        Database.execute("DELETE FROM participates WHERE project_id = %s", (project_id,))
+        Database.execute("DELETE FROM organizes WHERE project_id = %s", (project_id,))
+        Database.execute("DELETE FROM project_messages WHERE project_id = %s", (project_id,))
+    return redirect(url_for('home'))
+
+@app.route('/collective/<int:collective_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_collective(collective_id):
+    user_id = current_user.id
+    if not BelongsTo.is_member(user_id, collective_id):
+        return redirect(url_for('home'))
+    collective = Collective.get_by_id(collective_id)
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        location = request.form['location']
+        Database.execute(
+            "UPDATE collectives SET name = %s, description = %s, location = %s WHERE id = %s",
+            (name, description, location, collective_id)
+        )
+        return redirect(url_for('collective_home', collective_id=collective_id))
+    
+    return render_template('edit_collective.html', collective=collective)
+
+@app.route('/project/<int:project_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_project(project_id):
+    user_id = current_user.id
+    if not Participates.is_participant(user_id, project_id):
+        return redirect(url_for('home'))
+    project = Project.get_by_id(project_id)
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form['description']
+        Database.execute(
+            "UPDATE projects SET name = %s, description = %s WHERE id = %s",
+            (name, description, project_id)
+        )
+        return redirect(url_for('project_home', project_id=project_id))
+    
+    return render_template('edit_project.html', project=project)
+
+
 
 if __name__ == "__main__":
     print("Starting Flask application...")

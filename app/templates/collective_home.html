@@ -27,6 +27,11 @@
             <textarea name="message" placeholder="Enter your message"></textarea>
             <button type="submit">Send</button>
         </form>
+        {% if is_member %}
+        <form action="{{ url_for('edit_collective', collective_id=collective.id) }}" method="GET">
+            <button type="submit">Edit Collective</button>
+        </form>
+{% endif %}
     {% else %}
         <form action="{{ url_for('join_collective', collective_id=collective.id) }}" method="POST">
             <button type="submit">Join Collective</button>
