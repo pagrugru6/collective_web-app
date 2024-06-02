@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Create Project</title>
+    <style>
+        /* Optional: Ensure the multi-select dropdown has a height to show multiple options */
+        select[multiple] {
+            height: 150px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Create Project for {{ collective_id }}</h1>
-    <form method="post">
-        <label for="name">Name:</label><br>
-        <input type="text" id="name" name="name"><br>
-        <label for="description">Description:</label><br>
-        <textarea id="description" name="description"></textarea><br>
+    <h1>Create Project</h1>
+    <form action="{{ url_for('create_project', collective_id=collective_id) }}" method="POST">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" required></textarea>
         <br>
         <label for="collectives">Co-hosting Collectives:</label>
         <select id="collectives" name="collectives" multiple>

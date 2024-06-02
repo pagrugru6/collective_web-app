@@ -17,7 +17,7 @@
         <select id="collectives" name="collectives" multiple>
             {% for collective in all_collectives %}
                 {% if collective.id != collective_id %}
-                    <option value="{{ collective.id }}" {% if collective.id in project.collective_ids %}selected{% endif %}>{{ collective.name }}</option>
+                    <option value="{{ collective.id }}">{{ collective.name }}</option>
                 {% endif %}
             {% endfor %}
         </select>

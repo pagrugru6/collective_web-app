@@ -153,7 +153,6 @@ def create_project(collective_id):
     all_collectives = Collective.get_all()
     return render_template('create_project.html', collective_id=collective_id, all_collectives=all_collectives)
 
-
 @app.route('/collective/<int:collective_id>/post_message', methods=['POST'])
 @login_required
 def post_collective_message(collective_id):
@@ -274,9 +273,11 @@ def edit_collective(collective_id):
 @login_required
 def edit_project(project_id):
     user_id = current_user.id
-    if not Participates.is_member(user_id, project_id):
-        return redirect(url_for('home'))
     project = Project.get_by_id(project_id)
+    
+    if not project or not Participates.is_member(user_id, project_id):
+        return redirect(url_for('home'))
+    
     if request.method == 'POST':
         name = request.form['name']
         description = request.form['description']
@@ -284,9 +285,22 @@ def edit_project(project_id):
             "UPDATE projects SET name = %s, description = %s WHERE id = %s",
             (name, description, project_id)
         )
+        
+        # Update co-hosting collectives
+        Database.execute("DELETE FROM organizes WHERE project_id = %s", (project_id,))
+        co_hosting_collectives = request.form.getlist('collectives')
+        for co_collective_id in co_hosting_collectives:
+            Database.execute(
+                "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
+                (co_collective_id, project_id)
+            )
+        
         return redirect(url_for('project_home', project_id=project_id))
     
-    return render_template('edit_project.html', project=project)
+    all_collectives = Collective.get_all()
+    project.collective_ids = [c['id'] for c in project.collectives]
+    return render_template('edit_project.html', project=project, all_collectives=all_collectives)
+
 
 
 
