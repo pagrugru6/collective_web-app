@@ -187,33 +187,78 @@ class Collective:
 
     
 class Project:
-    def __init__(self, id, name, description):
+    def __init__(self, id, name, description, collectives=None):
         self.id = id
         self.name = name
         self.description = description
+        self.collectives = collectives if collectives is not None else []
 
     @staticmethod
     def create(name, description):
-        result = Database.query(
-            "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
-            (name, description)
-        )
-        project_id = result.fetchone()[0]
-        return project_id
+        conn = Database.get_db()
+        cursor = None
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
+                (name, description)
+            )
+            project_id = cursor.fetchone()[0]
+            conn.commit()
+            return project_id
+        except Exception as e:
+            print(f"Error creating project: {e}")
+            raise
+        finally:
+            if cursor:
+                cursor.close()
 
     @staticmethod
     def get_all():
-        results = Database.fetchall("SELECT id, name, description FROM projects")
-        return [Project(*row) for row in results]
+        query = """
+        SELECT p.id, p.name, p.description, c.id AS collective_id, c.name AS collective_name
+        FROM projects p
+        LEFT JOIN organizes o ON p.id = o.project_id
+        LEFT JOIN collectives c ON o.collective_id = c.id
+        """
+        results = Database.fetchall(query)
+        projects = {}
+        for row in results:
+            project_id = row[0]
+            if project_id not in projects:
+                projects[project_id] = Project(row[0], row[1], row[2])
+            if row[3] and row[4]:  # Check if collective info is not NULL
+                projects[project_id].collectives.append((row[3], row[4]))
+        return list(projects.values())
 
     @staticmethod
     def get_by_collective(collective_id):
-        results = Database.fetchall(
-            "SELECT p.id, p.name, p.description FROM projects p "
-            "JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
-            (collective_id,)
-        )
-        return [Project(*row) for row in results]
+        query = """
+        SELECT p.id, p.name, p.description, c.id AS collective_id, c.name AS collective_name
+        FROM projects p
+        JOIN organizes o ON p.id = o.project_id
+        JOIN collectives c ON o.collective_id = c.id
+        WHERE c.id = %s
+        """
+        results = Database.fetchall(query, (collective_id,))
+        projects = {}
+        for row in results:
+            project_id = row[0]
+            if project_id not in projects:
+                projects[project_id] = Project(row[0], row[1], row[2])
+            if row[3] and row[4]:
+                projects[project_id].collectives.append({'id': row[3], 'name': row[4]})
+        return list(projects.values())
+    
+    @staticmethod
+    def get_by_id(project_id):
+        print(f"Fetching project with id={project_id}")
+        result = Database.fetchone("SELECT id, name, description FROM projects WHERE id = %s", (project_id,))
+        if result:
+            print(f"Project found: {result}")
+            return Project(*result)
+        print("Project not found")
+        return None
 
 class Skill:
     def __init__(self, id, name, description):

@@ -11,6 +11,14 @@
         <input type="text" id="name" name="name"><br>
         <label for="description">Description:</label><br>
         <textarea id="description" name="description"></textarea><br>
+        <br>
+        <label for="collectives">Co-hosting Collectives:</label>
+        <select id="collectives" name="collectives" multiple>
+            {% for collective in all_collectives %}
+                <option value="{{ collective.id }}">{{ collective.name }}</option>
+            {% endfor %}
+        </select>
+        <br>
         <button type="submit">Create Project</button>
     </form>
     <a href="{{ url_for('collective_home', collective_id=collective_id) }}">Back to Collective</a>

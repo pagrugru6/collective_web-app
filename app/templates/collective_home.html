@@ -11,9 +11,17 @@
     {% if is_member %}
         <h2>Projects</h2>
         <ul>
-        {% for project in projects %}
-            <li>{{ project.name }} - {{ project.description }}</li>
-        {% endfor %}
+            {% for project in projects %}
+            <li>
+                <a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}
+                <br>
+                <small>Organized by: 
+                {% for collective in project.collectives %}
+                    <a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                </small>
+            </li>
+            {% endfor %}
         </ul>
         <a href="{{ url_for('create_project', collective_id=collective.id) }}">Create New Project</a>
         

@@ -8,7 +8,15 @@
     <h1>Browse Projects</h1>
     <ul>
     {% for project in projects %}
-        <li>{{ project.name }} - {{ project.description }}</li>
+    <li>
+        <a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}
+        <br>
+        <small>Organized by: 
+        {% for collective in project.collectives %}
+            <a href="{{ url_for('collective_home', collective_id=collective[0]) }}">{{ collective[1] }}</a>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+        </small>
+    </li>
     {% endfor %}
     </ul>
     {% if logged_in %}
