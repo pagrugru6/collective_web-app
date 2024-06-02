@@ -131,26 +131,13 @@ def create_project(collective_id):
         name = request.form['name']
         description = request.form['description']
         project_id = Project.create(name, description)
-        
-        # Link the project to the main collective
+        # Assuming there is a relationship table `organizes` with collective_id and project_id
         Database.execute(
             "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
             (collective_id, project_id)
         )
-        
-        # Link the project to the selected co-hosting collectives
-        co_hosting_collectives = request.form.getlist('collectives')
-        for co_collective_id in co_hosting_collectives:
-            Database.execute(
-                "INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
-                (co_collective_id, project_id)
-            )
-        
         return redirect(url_for('collective_home', collective_id=collective_id))
-    
-    all_collectives = Collective.get_all()
-    return render_template('create_project.html', collective_id=collective_id, all_collectives=all_collectives)
-
+    return render_template('create_project.html', collective_id=collective_id)
 
 @app.route('/collective/<int:collective_id>/post_message', methods=['POST'])
 @login_required
@@ -190,10 +177,10 @@ def project_home(project_id):
     if not project:
         print(f"Project with id={project_id} not found")
         return "Project not found", 404
-    is_member = Participates.is_member(current_user.id, project_id)
-    print(f"User is {'a participant' if is_member else 'not a participant'} of project {project_id}")
-    messages = ProjectMessage.get_messages(project_id) if is_member else []
-    return render_template('project_home.html', project=project, is_member=is_member, messages=messages)
+    is_participant = Participates.is_participant(current_user.id, project_id)
+    print(f"User is {'a participant' if is_participant else 'not a participant'} of project {project_id}")
+    messages = ProjectMessage.get_messages(project_id) if is_participant else []
+    return render_template('project_home.html', project=project, is_participant=is_participant, messages=messages)
 
 # Route to join a collective
 @app.route('/collective/<int:collective_id>/join', methods=['POST'])
@@ -212,7 +199,7 @@ def join_collective(collective_id):
 @login_required
 def join_project(project_id):
     user_id = current_user.id
-    if not Participates.is_member(user_id, project_id):
+    if not Participates.is_participant(user_id, project_id):
         Database.execute(
             "INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
             (user_id, project_id)
@@ -242,7 +229,7 @@ def delete_collective(collective_id):
 @login_required
 def delete_project(project_id):
     user_id = current_user.id
-    if Participates.is_member(user_id, project_id):
+    if Participates.is_participant(user_id, project_id):
         Database.execute("DELETE FROM projects WHERE id = %s", (project_id,))
         Database.execute("DELETE FROM participates WHERE project_id = %s", (project_id,))
         Database.execute("DELETE FROM organizes WHERE project_id = %s", (project_id,))
@@ -272,7 +259,7 @@ def edit_collective(collective_id):
 @login_required
 def edit_project(project_id):
     user_id = current_user.id
-    if not Participates.is_member(user_id, project_id):
+    if not Participates.is_participant(user_id, project_id):
         return redirect(url_for('home'))
     project = Project.get_by_id(project_id)
     if request.method == 'POST':
