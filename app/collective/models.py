@@ -91,7 +91,7 @@ class Database:
         #         cursor.close()
 
 class Person(UserMixin):
-    def __init__(self, id, name, email, username, password, bio, location):
+    def __init__(self, name, email, username, password, bio, location):
         self.id = id
         self.name = name
         self.email = email
@@ -99,11 +99,6 @@ class Person(UserMixin):
         self.password = password
         self.bio = bio
         self.location = location
-
-    @staticmethod
-    def get_by_id(user_id):
-        result = Database.fetchone("SELECT * FROM persons WHERE id = %s", (user_id,))
-        return Person(*result) if result else None
 
     @staticmethod
     def get_by_username(username):
@@ -119,10 +114,10 @@ class Person(UserMixin):
         )
 
     @staticmethod
-    def update(user_id, name, email, bio, location):
+    def update(user_username, name, email, bio, location):
         Database.query(
-            "UPDATE persons SET name = %s, email = %s, bio = %s, location = %s WHERE id = %s",
-            (name, email, bio, location, user_id)
+            "UPDATE persons SET name = %s, email = %s, bio = %s, location = %s WHERE username = %s",
+            (name, email, bio, location, user_username)
         )
 
 class Project:
@@ -233,54 +228,54 @@ class Skill:
 
 class BelongsTo:
     @staticmethod
-    def create(person_id, collective_id):
+    def create(person_username, collective_id):
         Database.query(
-            "INSERT INTO belongs_to (person_id, collective_id) VALUES (%s, %s)",
-            (person_id, collective_id)
+            "INSERT INTO belongs_to (person_username, collective_id) VALUES (%s, %s)",
+            (person_username, collective_id)
         )
 
     @staticmethod
-    def is_member(person_id, collective_id):
+    def is_member(person_username, collective_id):
         result = Database.fetchone(
-            "SELECT 1 FROM belongs_to WHERE person_id = %s AND collective_id = %s",
-            (person_id, collective_id)
+            "SELECT 1 FROM belongs_to WHERE person_username = %s AND collective_id = %s",
+            (person_username, collective_id)
         )
         return result is not None
 
     @staticmethod
-    def get_collectives_for_user(person_id):
+    def get_collectives_for_user(person_username):
         return Database.fetchall(
-            "SELECT c.id, c.name, c.description, c.location FROM collectives c JOIN belongs_to b ON c.id = b.collective_id WHERE b.person_id = %s",
-            (person_id,)
+            "SELECT c.id, c.name, c.description, c.location FROM collectives c JOIN belongs_to b ON c.id = b.collective_id WHERE b.person_username = %s",
+            (person_username,)
         )
 
 class Possesses:
     @staticmethod
-    def create(person_id, skill_id):
-        Database.query("INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
-                       (person_id, skill_id))
+    def create(person_username, skill_id):
+        Database.query("INSERT INTO possesses (person_username, skill_id) VALUES (%s, %s)",
+                       (person_username, skill_id))
 
 class Participates:
     @staticmethod
-    def create(person_id, project_id):
+    def create(person_username, project_id):
         Database.query(
-            "INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
-            (person_id, project_id)
+            "INSERT INTO participates (person_username, project_id) VALUES (%s, %s)",
+            (person_username, project_id)
         )
 
     @staticmethod
-    def is_member(person_id, project_id):
+    def is_member(person_username, project_id):
         result = Database.fetchone(
-            "SELECT 1 FROM participates WHERE person_id = %s AND project_id = %s",
-            (person_id, project_id)
+            "SELECT 1 FROM participates WHERE person_username = %s AND project_id = %s",
+            (person_username, project_id)
         )
         return result is not None
 
     @staticmethod
-    def get_projects_for_user(person_id):
+    def get_projects_for_user(person_username):
         return Database.fetchall(
-            "SELECT p.id, p.name, p.description FROM projects p JOIN participates pa ON p.id = pa.project_id WHERE pa.person_id = %s",
-            (person_id,)
+            "SELECT p.id, p.name, p.description FROM projects p JOIN participates pa ON p.id = pa.project_id WHERE pa.person_username = %s",
+            (person_username,)
         )
 
 class Organizes:
@@ -297,45 +292,45 @@ class Requires:
 
 
 class CollectiveMessage:
-    def __init__(self, collective_id, timestamp, sender_id, message):
+    def __init__(self, collective_id, timestamp, sender_username, message):
         self.collective_id = collective_id
         self.timestamp = timestamp
-        self.sender_id = sender_id
+        self.sender_username = sender_username
         self.message = message
 
     @staticmethod
-    def create(collective_id, sender_id, message):
+    def create(collective_id, sender_username, message):
         Database.execute(
-            "INSERT INTO collective_messages (collective_id, sender_id, message) VALUES (%s, %s, %s)",
-            (collective_id, sender_id, message)
+            "INSERT INTO collective_messages (collective_id, sender_username, message) VALUES (%s, %s, %s)",
+            (collective_id, sender_username, message)
         )
 
     @staticmethod
     def get_messages(collective_id):
         results = Database.fetchall(
-            "SELECT collective_id, timestamp, sender_id, message FROM collective_messages WHERE collective_id = %s ORDER BY timestamp",
+            "SELECT collective_id, timestamp, sender_username, message FROM collective_messages WHERE collective_id = %s ORDER BY timestamp",
             (collective_id,)
         )
         return [CollectiveMessage(*row) for row in results]
 
 class ProjectMessage:
-    def __init__(self, project_id, timestamp, sender_id, message):
+    def __init__(self, project_id, timestamp, sender_username, message):
         self.project_id = project_id
         self.timestamp = timestamp
-        self.sender_id = sender_id
+        self.sender_username = sender_username
         self.message = message
 
     @staticmethod
-    def create(project_id, sender_id, message):
+    def create(project_id, sender_username, message):
         Database.execute(
-            "INSERT INTO project_messages (project_id, sender_id, message) VALUES (%s, %s, %s)",
-            (project_id, sender_id, message)
+            "INSERT INTO project_messages (project_id, sender_username, message) VALUES (%s, %s, %s)",
+            (project_id, sender_username, message)
         )
 
     @staticmethod
     def get_messages(project_id):
         results = Database.fetchall(
-            "SELECT project_id, timestamp, sender_id, message FROM project_messages WHERE project_id = %s ORDER BY timestamp",
+            "SELECT project_id, timestamp, sender_username, message FROM project_messages WHERE project_id = %s ORDER BY timestamp",
             (project_id,)
         )
         return [ProjectMessage(*row) for row in results]
