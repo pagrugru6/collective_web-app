@@ -15,7 +15,9 @@
         <label for="collectives">Co-hosting Collectives:</label>
         <select id="collectives" name="collectives" multiple>
             {% for collective in all_collectives %}
-                <option value="{{ collective.id }}">{{ collective.name }}</option>
+                {% if collective.id != collective_id %}
+                    <option value="{{ collective.id }}">{{ collective.name }}</option>
+                {% endif %}
             {% endfor %}
         </select>
         <br>

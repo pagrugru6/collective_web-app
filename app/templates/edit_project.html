@@ -13,10 +13,16 @@
         <label for="description">Description:</label>
         <textarea id="description" name="description" required>{{ project.description }}</textarea>
         <br>
+        <label for="collectives">Co-hosting Collectives:</label>
+        <select id="collectives" name="collectives" multiple>
+            {% for collective in all_collectives %}
+                {% if collective.id != collective_id %}
+                    <option value="{{ collective.id }}" {% if collective.id in project.collective_ids %}selected{% endif %}>{{ collective.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <br>
         <button type="submit">Save Changes</button>
-    </form>
-    <form action="{{ url_for('delete_project', project_id=project.id) }}" method="POST">
-        <button type="submit">Delete Project</button>
     </form>
     <a href="{{ url_for('project_home', project_id=project.id) }}">Back to Project</a>
 </body>
