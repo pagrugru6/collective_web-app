@@ -17,16 +17,24 @@
         </ul>
         <a href="{{ url_for('create_project', collective_id=collective.id) }}">Create New Project</a>
         
-        <h2>Messages</h2>
+        <h2>Forum</h2>
         <ul>
         {% for message in messages %}
-            <li>{{ message.content }} - {{ message.author }}</li>
+            <li>{{ message.message }} - {{ message.sender_id }} - {{ message.timestamp }}</li>
         {% endfor %}
         </ul>
+        <form action="{{ url_for('post_collective_message', collective_id=collective.id) }}" method="POST">
+            <textarea name="message" placeholder="Enter your message"></textarea>
+            <button type="submit">Send</button>
+        </form>
     {% else %}
+        <form action="{{ url_for('join_collective', collective_id=collective.id) }}" method="POST">
+            <button type="submit">Join Collective</button>
+        </form>
         <p>You are not a member of this collective.</p>
     {% endif %}
     
     <a href="{{ url_for('home') }}">Back to Home</a>
 </body>
 </html>
+

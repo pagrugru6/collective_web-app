@@ -2,7 +2,7 @@ import os
 import psycopg2
 from flask import Flask, render_template, redirect, url_for, request, jsonify, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Invitation, Database
+from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -22,6 +22,8 @@ def close_db(exception):
 
 @app.route('/')
 def startup():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     return render_template('startup.html')
 
 @app.route('/home')
@@ -86,29 +88,6 @@ def logout():
     logout_user()
     return redirect(url_for('startup'))
 
-# @app.route('/collectives', methods=['GET', 'POST'])
-# @login_required
-# def collectives():
-#     if request.method == 'POST':
-#         name = request.form['name']
-#         description = request.form['description']
-#         location = request.form['location']
-#         Collective.create(name, description, location)
-#         return redirect(url_for('collectives'))
-#     collectives = Database.fetchall("SELECT * FROM collectives")
-#     return render_template('collectives.html', collectives=collectives)
-
-@app.route('/projects', methods=['GET', 'POST'])
-@login_required
-def projects():
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form['description']
-        Project.create(name, description)
-        return redirect(url_for('projects'))
-    projects = Database.fetchall("SELECT * FROM projects")
-    return render_template('projects.html', projects=projects)
-
 @app.route('/browse_collectives')
 def browse_collectives():
     print("Accessing browse_collectives route")
@@ -122,6 +101,17 @@ def browse_collectives():
         print("User is not logged in")
     return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
 
+@app.route('/browse_projects')
+def browse_projects():
+    projects = Project.get_all()
+    logged_in = current_user.is_authenticated
+    for project in projects:
+        print(f"Project: id={project.id}, name={project.name}, description={project.description}")
+    if logged_in:
+        print("User is logged in")
+    else:
+        print("User is not logged in")
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in)
 
 @app.route('/create_collective', methods=['GET', 'POST'])
 @login_required
@@ -149,66 +139,21 @@ def create_project(collective_id):
         return redirect(url_for('collective_home', collective_id=collective_id))
     return render_template('create_project.html', collective_id=collective_id)
 
-@app.route('/browse_projects')
-def browse_projects():
-    projects = Project.get_all()
-    return render_template('browse_projects.html', projects=projects)
-
-@app.route('/send_collective_message', methods=['POST'])
+@app.route('/collective/<int:collective_id>/post_message', methods=['POST'])
 @login_required
-def send_collective_message():
-    sender_id = current_user.id
-    collective_id = request.form['collective_id']
-    message = request.form['message']
-    CollectiveMessage.create(collective_id, sender_id, message)
-    return '', 204  # No Content
+def post_collective_message(collective_id):
+    user_id = current_user.id
+    message_content = request.form['message']
+    CollectiveMessage.create(collective_id, user_id, message_content)
+    return redirect(url_for('collective_home', collective_id=collective_id))
 
-@app.route('/get_collective_messages', methods=['GET'])
+@app.route('/project/<int:project_id>/post_message', methods=['POST'])
 @login_required
-def get_collective_messages():
-    collective_id = request.args.get('collective_id')
-    last_message_id = request.args.get('last_message_id')
-    if last_message_id:
-        messages = CollectiveMessage.get_messages(collective_id, last_message_id)
-    else:
-        messages = CollectiveMessage.get_messages(collective_id)
-    return jsonify(messages)
-
-@app.route('/send_project_message', methods=['POST'])
-@login_required
-def send_project_message():
-    sender_id = current_user.id
-    project_id = request.form['project_id']
-    message = request.form['message']
-    ProjectMessage.create(project_id, sender_id, message)
-    return '', 204  # No Content
-
-@app.route('/get_project_messages', methods=['GET'])
-@login_required
-def get_project_messages():
-    project_id = request.args.get('project_id')
-    last_message_id = request.args.get('last_message_id')
-    if last_message_id:
-        messages = ProjectMessage.get_messages(project_id, last_message_id)
-    else:
-        messages = ProjectMessage.get_messages(project_id)
-    return jsonify(messages)
-
-@app.route('/invite_to_collective', methods=['POST'])
-@login_required
-def invite_to_collective():
-    inviter_id = current_user.id
-    collective_id = request.form['collective_id']
-    invitee_id = request.form['invitee_id']
-    Invitation.create(collective_id, invitee_id, inviter_id)
-    return '', 204  # No Content
-
-@app.route('/get_invitations', methods=['GET'])
-@login_required
-def get_invitations():
-    invitee_id = current_user.id
-    invitations = Invitation.get_invitations(invitee_id)
-    return jsonify(invitations)
+def post_project_message(project_id):
+    user_id = current_user.id
+    message_content = request.form['message']
+    ProjectMessage.create(project_id, user_id, message_content)
+    return redirect(url_for('project_home', project_id=project_id))
 
 @app.route('/collective/<int:collective_id>')
 @login_required
@@ -227,16 +172,40 @@ def collective_home(collective_id):
 @app.route('/project/<int:project_id>')
 @login_required
 def project_home(project_id):
+    print(f"Accessing project_home route with id={project_id}")
     project = Project.get_by_id(project_id)
-    is_member = Participates.is_member(current_user.id, project_id)
-    messages = ProjectMessage.get_messages(project_id) if is_member else []
-    return render_template('project_home.html', project=project, is_member=is_member, messages=messages)
+    if not project:
+        print(f"Project with id={project_id} not found")
+        return "Project not found", 404
+    is_participant = Participates.is_participant(current_user.id, project_id)
+    print(f"User is {'a participant' if is_participant else 'not a participant'} of project {project_id}")
+    messages = ProjectMessage.get_messages(project_id) if is_participant else []
+    return render_template('project_home.html', project=project, is_participant=is_participant, messages=messages)
 
-@app.route('/join_collective/<int:collective_id>', methods=['POST'])
+# Route to join a collective
+@app.route('/collective/<int:collective_id>/join', methods=['POST'])
 @login_required
 def join_collective(collective_id):
-    BelongsTo.create(current_user.id, collective_id)
+    user_id = current_user.id
+    if not BelongsTo.is_member(user_id, collective_id):
+        Database.execute(
+            "INSERT INTO belongs_to (person_id, collective_id) VALUES (%s, %s)",
+            (user_id, collective_id)
+        )
     return redirect(url_for('collective_home', collective_id=collective_id))
+
+# Route to join a project
+@app.route('/project/<int:project_id>/join', methods=['POST'])
+@login_required
+def join_project(project_id):
+    user_id = current_user.id
+    if not Participates.is_participant(user_id, project_id):
+        Database.execute(
+            "INSERT INTO participates (person_id, project_id) VALUES (%s, %s)",
+            (user_id, project_id)
+        )
+    return redirect(url_for('project_home', project_id=project_id))
+
 
 if __name__ == "__main__":
     print("Starting Flask application...")

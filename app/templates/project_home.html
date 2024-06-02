@@ -7,22 +7,25 @@
 <body>
     <h1>{{ project.name }}</h1>
     <p>{{ project.description }}</p>
-    {% if is_member %}
-        <h2>Chat</h2>
-        <div id="chat-box" style="border: 1px solid black; height: 300px; overflow-y: scroll;">
+
+    {% if is_participant %}
+        <h2>Messages</h2>
+        <ul>
         {% for message in messages %}
-            <div>{{ message.sender_id }}: {{ message.message }}</div>
+            <li>{{ message.message }} - {{ message.sender_id }} - {{ message.timestamp }}</li>
         {% endfor %}
-        </div>
-        <form method="post" action="{{ url_for('send_project_message', project_id=project.id) }}">
-            <input type="text" name="message" placeholder="Type your message...">
+        </ul>
+        <form action="{{ url_for('post_project_message', project_id=project.id) }}" method="POST">
+            <textarea name="message" placeholder="Enter your message"></textarea>
             <button type="submit">Send</button>
         </form>
     {% else %}
-        <form method="post" action="{{ url_for('join_project', project_id=project.id) }}">
+        <form action="{{ url_for('join_project', project_id=project.id) }}" method="POST">
             <button type="submit">Join Project</button>
         </form>
+        <p>You are not a participant in this project.</p>
     {% endif %}
+    
     <a href="{{ url_for('home') }}">Back to Home</a>
 </body>
 </html>
