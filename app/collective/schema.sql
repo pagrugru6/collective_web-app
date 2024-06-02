@@ -79,7 +79,7 @@ CREATE TABLE collective_messages (
     sender_id INT REFERENCES persons(id) ON DELETE CASCADE,
 	sender_name VARCHAR(100) NOT NULL REFERENCES persons(username) ON DELETE CASCADE,
     message TEXT NOT NULL,
-    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,ß
     PRIMARY KEY (collective_id, timestamp)
 );
 
