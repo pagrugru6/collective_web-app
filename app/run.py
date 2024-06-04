@@ -2,7 +2,7 @@ import os
 import psycopg2
 from flask import Flask, render_template, redirect, url_for, request, jsonify, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database
+from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database, Location
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime;
 
@@ -48,6 +48,9 @@ def home():
 @login_required
 def profilePage(username):
     user = Person.get_by_username(username)
+    if not user:
+        print(f"User with username={username} not found")
+        return "User not found", 404
     current_username = current_user.username
     if(username == current_username):
         return redirect(url_for('home'))
@@ -179,7 +182,13 @@ def browse_collectives():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations = Location.get_unique_locations())
+
+@app.route('/filter_collectives_by_location/<location>')
+def filter_collectives_by_location(location):
+    collectives = Collective.get_collectives_by_location(location)
+    logged_in = current_user.is_authenticated
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations=Location.get_unique_locations())
 
 @app.route('/browse_projects')
 def browse_projects():

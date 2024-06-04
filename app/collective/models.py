@@ -199,7 +199,11 @@ class Collective:
             return Collective(*result)
         print("Collective not found")
         return None
-
+    @staticmethod
+    def get_collectives_by_location(location):
+        # Query collectives by location from the database
+        results = Database.fetchall("SELECT * FROM collectives WHERE location LIKE %s", (f'%{location}%',))
+        return [Collective(*row) for row in results]
     
 class Project:
     def __init__(self, id, name, description, collectives=None):
@@ -420,3 +424,13 @@ class ProjectMessage:
             (project_id,)
         )
         return [ProjectMessage(*row) for row in results]
+    
+class Location:
+    @staticmethod
+    def get_unique_locations():
+        # Query unique locations for collectives from the database
+        #project_locations = Database.fetchall("SELECT DISTINCT location FROM projects")
+        collective_locations = Database.fetchall("SELECT DISTINCT location FROM collectives")
+        unique_locations = [location[0] for location in collective_locations]
+        print(unique_locations)
+        return unique_locations
