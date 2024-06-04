@@ -19,8 +19,8 @@
         <a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}
         <br>
         <small>Organized by: 
-        {% for collective in project.collectives %}
-            <a href="{{ url_for('collective_home', collective_id=collective[0]) }}">{{ collective[1] }}</a>{% if not loop.last %}, {% endif %}
+        {% for collective in collectives_for_projects[project.id] %}
+            <a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}
         </small>
     </li>

@@ -8,21 +8,21 @@
     <h1>{{ collective.name }}</h1>
     <p>{{ collective.description }}</p>
 
-    {% if is_member %}
-        <h2>Projects</h2>
+    <h2>Projects</h2>
         <ul>
             {% for project in projects %}
             <li>
                 <a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}
                 <br>
-                <small>Organized by: 
-                {% for collective in project.collectives %}
+                <small>Organized by:
+                {% for collective in collectives_for_projects[project.id] %}
                     <a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a>{% if not loop.last %}, {% endif %}
                 {% endfor %}
                 </small>
             </li>
             {% endfor %}
         </ul>
+    {% if is_member %}
         <a href="{{ url_for('create_project', collective_id=collective.id) }}">Create New Project</a>
         
         <h2>Forum</h2>
