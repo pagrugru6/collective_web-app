@@ -162,14 +162,6 @@ class Project:
             (collective_id,)
         )
         return [Project(*row) for row in results]
-    
-    def get_skills(self):
-        results = Database.fetchall(
-            "SELECT s.id, s.name, s.description FROM skills s "
-            "JOIN requires r ON s.id = r.skill_id WHERE r.project_id = %s",
-            (self.id,)
-        )
-        return [Skill(*row) for row in results]
 
 class Collective:
     def __init__(self, id, name, description, location):
@@ -377,6 +369,14 @@ class Requires:
     def create(project_id, skill_id):
         Database.query("INSERT INTO requires (project_id, skill_id) VALUES (%s, %s)",
                        (project_id, skill_id))
+        
+    @staticmethod
+    def get_skills_for_project(project_id):
+        results = Database.fetchall(
+            "SELECT s.id, s.name, s.description FROM skills s JOIN requires r ON s.id = r.skill_id WHERE r.project_id = %s",
+            (project_id,)
+        )
+        return [Skill(*row) for row in results]
 
 
 class CollectiveMessage:
