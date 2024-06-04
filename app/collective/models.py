@@ -331,6 +331,14 @@ class Possesses:
     def create(person_id, skill_id):
         Database.query("INSERT INTO possesses (person_id, skill_id) VALUES (%s, %s)",
                        (person_id, skill_id))
+        
+    @staticmethod
+    def get_skills_for_user(person_id):
+        results =  Database.fetchall(
+            "SELECT s.id, s.name, s.description FROM skills s JOIN possesses po ON s.id = po.skill_id WHERE po.person_id = %s",
+            (person_id,)
+        )
+        return [Project(*row) for row in results]
 
 class Participates:
     @staticmethod

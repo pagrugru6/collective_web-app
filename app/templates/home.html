@@ -24,5 +24,12 @@
         <li><a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}</li>
     {% endfor %}
     </ul>
+
+    <h2>Your Skills</h2>
+    <ul>
+    {% for skill in skills %}
+        <li>{{ project.name }}</a> - {{ project.description }}</li>
+    {% endfor %}
+    </ul>
 </body>
 </html>
