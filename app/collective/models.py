@@ -320,10 +320,11 @@ class BelongsTo:
 
     @staticmethod
     def get_collectives_for_user(person_id):
-        return Database.fetchall(
+        results = Database.fetchall(
             "SELECT c.id, c.name, c.description, c.location FROM collectives c JOIN belongs_to b ON c.id = b.collective_id WHERE b.person_id = %s",
             (person_id,)
         )
+        return [Collective(*row) for row in results]
 
 class Possesses:
     @staticmethod
@@ -349,10 +350,11 @@ class Participates:
 
     @staticmethod
     def get_projects_for_user(person_id):
-        return Database.fetchall(
+        results =  Database.fetchall(
             "SELECT p.id, p.name, p.description FROM projects p JOIN participates pa ON p.id = pa.project_id WHERE pa.person_id = %s",
             (person_id,)
         )
+        return [Project(*row) for row in results]
 
 class Organizes:
     @staticmethod

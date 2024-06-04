@@ -14,14 +14,14 @@
     <h2>Your Collectives</h2>
     <ul>
     {% for collective in collectives %}
-        <li>{{ collective.name }}</li>
+        <li><a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a> - {{ collective.description }}</li>
     {% endfor %}
     </ul>
     
     <h2>Your Projects</h2>
     <ul>
     {% for project in projects %}
-        <li>{{ project.name }}</li>
+        <li><a href="{{ url_for('project_home', project_id=project.id) }}">{{ project.name }}</a> - {{ project.description }}</li>
     {% endfor %}
     </ul>
 </body>
