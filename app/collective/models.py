@@ -126,13 +126,6 @@ class Person(UserMixin):
             "UPDATE persons SET name = %s, email = %s, bio = %s, location = %s WHERE id = %s",
             (name, email, bio, location, user_id)
         )
-    def get_skills(self):
-        results = Database.fetchall(
-            "SELECT s.id, s.name, s.description FROM skills s "
-            "JOIN possesses p ON s.id = p.skill_id WHERE p.person_id = %s",
-            (self.id,)
-        )
-        return [Skill(*row) for row in results]
 
 class Project:
     def __init__(self, id, name, description):
@@ -152,15 +145,6 @@ class Project:
     @staticmethod
     def get_all():
         results = Database.fetchall("SELECT id, name, description FROM projects")
-        return [Project(*row) for row in results]
-
-    @staticmethod
-    def get_by_collective(collective_id):
-        results = Database.fetchall(
-            "SELECT p.id, p.name, p.description FROM projects p "
-            "JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
-            (collective_id,)
-        )
         return [Project(*row) for row in results]
 
 class Collective:
@@ -193,71 +177,27 @@ class Collective:
             return Collective(*result)
         print("Collective not found")
         return None
-
+    
+    @staticmethod
+    def get_collectives_by_location(location):
+        # Query collectives by location from the database
+        results = Database.fetchall("SELECT * FROM collectives WHERE location LIKE %s", (f'%{location}%',))
+        return [Collective(*row) for row in results]
     
 class Project:
-    def __init__(self, id, name, description, collectives=None):
+    def __init__(self, id, name, description):
         self.id = id
         self.name = name
         self.description = description
-        self.collectives = collectives if collectives is not None else []
 
     @staticmethod
     def create(name, description):
-        conn = Database.get_db()
-        cursor = None
-        try:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
-                (name, description)
-            )
-            project_id = cursor.fetchone()[0]
-            conn.commit()
-            return project_id
-        except Exception as e:
-            print(f"Error creating project: {e}")
-            raise
-        finally:
-            if cursor:
-                cursor.close()
-
-    @staticmethod
-    def get_all():
-        query = """
-        SELECT p.id, p.name, p.description, c.id AS collective_id, c.name AS collective_name
-        FROM projects p
-        LEFT JOIN organizes o ON p.id = o.project_id
-        LEFT JOIN collectives c ON o.collective_id = c.id
-        """
-        results = Database.fetchall(query)
-        projects = {}
-        for row in results:
-            project_id = row[0]
-            if project_id not in projects:
-                projects[project_id] = Project(row[0], row[1], row[2])
-            if row[3] and row[4]:  # Check if collective info is not NULL
-                projects[project_id].collectives.append((row[3], row[4]))
-        return list(projects.values())
-
-    @staticmethod
-    def get_by_collective(collective_id):
-        query = """
-        SELECT p.id, p.name, p.description, c.id AS collective_id, c.name AS collective_name
-        FROM projects p
-        JOIN organizes o ON p.id = o.project_id
-        JOIN collectives c ON o.collective_id = c.id
-        WHERE c.id = %s
-        """
-        results = Database.fetchall(query, (collective_id,))
-        projects = {}
-        for row in results:
-            project_id = row[0]
-            if project_id not in projects:
-                projects[project_id] = Project(row[0], row[1], row[2])
-            if row[3] and row[4]:
-                projects[project_id].collectives.append({'id': row[3], 'name': row[4]})
-        return list(projects.values())
+        result = Database.query(
+            "INSERT INTO projects (name, description) VALUES (%s, %s) RETURNING id",
+            (name, description)
+        )
+        project_id = result.fetchone()[0]
+        return project_id
     
     @staticmethod
     def get_by_id(project_id):
@@ -268,6 +208,11 @@ class Project:
             return Project(*result)
         print("Project not found")
         return None
+    
+    @staticmethod
+    def get_all():
+        results = Database.fetchall("SELECT id, name, description FROM projects")
+        return [Project(*row) for row in results]
 
 class Skill:
     def __init__(self, id, name, description):
@@ -370,6 +315,23 @@ class Organizes:
     def create(collective_id, project_id):
         Database.query("INSERT INTO organizes (collective_id, project_id) VALUES (%s, %s)",
                        (collective_id, project_id))
+        
+    @staticmethod
+    def get_projects_for_collective(collective_id):
+        results = Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p JOIN organizes o ON p.id = o.project_id WHERE o.collective_id = %s",
+            (collective_id,)
+        )
+        return [Project(*row) for row in results]
+    
+    @staticmethod
+    def get_collectives_for_project(project_id):
+        results = Database.fetchall(
+            "SELECT c.id, c.name, c.description, c.location FROM collectives c JOIN organizes o ON c.id = o.collective_id WHERE o.project_id = %s",
+            (project_id,)
+        )
+        print(results)
+        return [Collective(*row) for row in results]
 
 class Requires:
     @staticmethod
@@ -382,6 +344,14 @@ class Requires:
         results = Database.fetchall(
             "SELECT s.id, s.name, s.description FROM skills s JOIN requires r ON s.id = r.skill_id WHERE r.project_id = %s",
             (project_id,)
+        )
+        return [Skill(*row) for row in results]
+    
+    @staticmethod
+    def get_projects_for_skill(skill_id):
+        results = Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p JOIN requires r ON p.id = r.project_id WHERE r.skill_id = %s",
+            (skill_id,)
         )
         return [Skill(*row) for row in results]
 
@@ -429,3 +399,24 @@ class ProjectMessage:
             (project_id,)
         )
         return [ProjectMessage(*row) for row in results]
+    
+class Location:
+    @staticmethod
+    def get_unique_locations():
+        # Query unique locations for collectives and users from the database
+        user_locations = Database.fetchall("SELECT DISTINCT location FROM persons")
+        collective_locations = Database.fetchall("SELECT DISTINCT location FROM collectives")
+        # Combine locations
+        all_locations = user_locations + collective_locations
+        
+        # Normalize and split locations
+        unique_locations_set = set()
+        for location_tuple in all_locations:
+            if location_tuple[0]:  # Ensure the location is not None
+                locations = [loc.strip() for loc in location_tuple[0].split(',')]
+                unique_locations_set.update(locations)
+        
+        # Sort unique locations
+        unique_locations = sorted(unique_locations_set)
+        
+        return unique_locations

@@ -2,7 +2,7 @@ import os
 import psycopg2
 from flask import Flask, render_template, redirect, url_for, request, jsonify, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database
+from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database, Location
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime;
 
@@ -48,6 +48,9 @@ def home():
 @login_required
 def profilePage(username):
     user = Person.get_by_username(username)
+    if not user:
+        print(f"User with username={username} not found")
+        return "User not found", 404
     current_username = current_user.username
     if(username == current_username):
         return redirect(url_for('home'))
@@ -103,7 +106,7 @@ def profile():
         return redirect(url_for('home'))
 
     skills = Skill.get_all()
-    user_skill_ids = [skill.id for skill in user.get_skills()]
+    user_skill_ids = [skill.id for skill in Possesses.get_skills_for_user(user.id)]
     return render_template('profile.html', user=user, skills=skills, user_skill_ids=user_skill_ids)
 
 
@@ -179,11 +182,21 @@ def browse_collectives():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in)
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations = Location.get_unique_locations(), collectives_empty = len(collectives) == 0)
+
+@app.route('/filter_collectives_by_location/<location>')
+def filter_collectives_by_location(location):
+    collectives = Collective.get_collectives_by_location(location)
+    logged_in = current_user.is_authenticated
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations=Location.get_unique_locations(), collectives_empty = len(collectives) == 0)
 
 @app.route('/browse_projects')
 def browse_projects():
     projects = Project.get_all()
+    project_ids = [project.id for project in projects]
+    collectives_for_projects = {
+        project_id: Organizes.get_collectives_for_project(project_id)
+        for project_id in project_ids}
     logged_in = current_user.is_authenticated
     for project in projects:
         print(f"Project: id={project.id}, name={project.name}, description={project.description}")
@@ -191,7 +204,17 @@ def browse_projects():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_projects.html', projects=projects, logged_in=logged_in)
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects, projects_empty = len(projects) == 0)
+
+@app.route('/filter_projects_by_skill/<skill_id>')
+def filter_projects_by_skill(skill_id):
+    projects = Requires.get_projects_for_skill(skill_id)
+    project_ids = [project.id for project in projects]
+    collectives_for_projects = {
+        project_id: Organizes.get_collectives_for_project(project_id)
+        for project_id in project_ids}
+    logged_in = current_user.is_authenticated
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects, projects_empty = len(projects) == 0)
 
 @app.route('/create_collective', methods=['GET', 'POST'])
 @login_required
@@ -283,9 +306,13 @@ def collective_home(collective_id):
     is_member = BelongsTo.is_member(current_user.id, collective_id)
     members = BelongsTo.get_members(collective.id)
     print(f"User is {'a member' if is_member else 'not a member'} of collective {collective_id}")
-    projects = Project.get_by_collective(collective_id) if is_member else []
+    projects = Organizes.get_projects_for_collective(collective_id) if is_member else []
+    project_ids = [project.id for project in projects]
+    collectives_for_projects = {
+        project_id: Organizes.get_collectives_for_project(project_id)
+        for project_id in project_ids}
     messages = CollectiveMessage.get_messages(collective_id) if is_member else []
-    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages,members=members)
+    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages)
 
 @app.route('/project/<int:project_id>')
 @login_required
@@ -296,9 +323,11 @@ def project_home(project_id):
         print(f"Project with id={project_id} not found")
         return "Project not found", 404
     is_member = Participates.is_member(current_user.id, project_id)
+    collectives = Organizes.get_collectives_for_project(project_id)
+    skills = Requires.get_skills_for_project(project_id)
     print(f"User is {'a participant' if is_member else 'not a participant'} of project {project_id}")
     messages = ProjectMessage.get_messages(project_id) if is_member else []
-    return render_template('project_home.html', project=project, is_member=is_member, messages=messages)
+    return render_template('project_home.html', project=project, is_member=is_member, messages=messages, collectives= collectives, skills=skills)
 
 # Route to join a collective
 @app.route('/collective/<int:collective_id>/join', methods=['POST'])
@@ -431,7 +460,7 @@ def edit_project(project_id):
     skills = Skill.get_all()
     project_skill_ids = [skill.id for skill in Requires.get_skills_for_project(project_id= project.id)]
     all_collectives = Collective.get_all()
-    project.collective_ids = [c['id'] for c in project.collectives]
+    project.collective_ids = [c.id for c in Organizes.get_collectives_for_project(project.id)]
     return render_template('edit_project.html', project=project, all_collectives=all_collectives,skills=skills, project_skill_ids=project_skill_ids)
 
 @app.route('/profile/add_skill', methods=['GET', 'POST'])
