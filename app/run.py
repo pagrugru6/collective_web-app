@@ -131,7 +131,7 @@ def register():
         return redirect(url_for('login'))
 
     skills = Skill.get_all()
-    return render_template('create_profile.html', skills=skills)
+    return render_template('register.html', skills=skills)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
