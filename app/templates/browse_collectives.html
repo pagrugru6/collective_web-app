@@ -14,9 +14,13 @@
             <li><a href="{{ url_for('filter_collectives_by_location', location=location) }}">{{ location }}</a></li>
         {% endfor %}
     </ul>
-    {% for collective in collectives %}
+    {% if collectives_empty %}
+        No collectives... Create one!
+    {% else %}
+        {% for collective in collectives %}
         <li><a href="{{ url_for('collective_home', collective_id=collective.id) }}">{{ collective.name }}</a> - {{ collective.description }}</li>
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
     </ul>
     {% if logged_in %}
         <a href="{{ url_for('create_collective') }}">Create New Collective</a>

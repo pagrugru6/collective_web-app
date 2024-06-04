@@ -182,13 +182,13 @@ def browse_collectives():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations = Location.get_unique_locations())
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations = Location.get_unique_locations(), collectives_empty = len(collectives) == 0)
 
 @app.route('/filter_collectives_by_location/<location>')
 def filter_collectives_by_location(location):
     collectives = Collective.get_collectives_by_location(location)
     logged_in = current_user.is_authenticated
-    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations=Location.get_unique_locations())
+    return render_template('browse_collectives.html', collectives=collectives, logged_in=logged_in, locations=Location.get_unique_locations(), collectives_empty = len(collectives) == 0)
 
 @app.route('/browse_projects')
 def browse_projects():
@@ -204,7 +204,7 @@ def browse_projects():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects)
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects, projects_empty = len(projects) == 0)
 
 @app.route('/filter_projects_by_skill/<skill_id>')
 def filter_projects_by_skill(skill_id):
@@ -214,7 +214,7 @@ def filter_projects_by_skill(skill_id):
         project_id: Organizes.get_collectives_for_project(project_id)
         for project_id in project_ids}
     logged_in = current_user.is_authenticated
-    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects)
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all(), collectives_for_projects=collectives_for_projects, projects_empty = len(projects) == 0)
 
 @app.route('/create_collective', methods=['GET', 'POST'])
 @login_required
