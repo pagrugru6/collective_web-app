@@ -200,7 +200,13 @@ def browse_projects():
         print("User is logged in")
     else:
         print("User is not logged in")
-    return render_template('browse_projects.html', projects=projects, logged_in=logged_in)
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all())
+
+@app.route('/filter_projects_by_skill/<skill_id>')
+def filter_projects_by_skill(skill_id):
+    projects = Requires.get_projects_for_skill(skill_id)
+    logged_in = current_user.is_authenticated
+    return render_template('browse_projects.html', projects=projects, logged_in=logged_in, skills = Skill.get_all())
 
 @app.route('/create_collective', methods=['GET', 'POST'])
 @login_required

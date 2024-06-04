@@ -193,6 +193,7 @@ class Collective:
             return Collective(*result)
         print("Collective not found")
         return None
+    
     @staticmethod
     def get_collectives_by_location(location):
         # Query collectives by location from the database
@@ -379,6 +380,14 @@ class Requires:
         results = Database.fetchall(
             "SELECT s.id, s.name, s.description FROM skills s JOIN requires r ON s.id = r.skill_id WHERE r.project_id = %s",
             (project_id,)
+        )
+        return [Skill(*row) for row in results]
+    
+    @staticmethod
+    def get_projects_for_skill(skill_id):
+        results = Database.fetchall(
+            "SELECT p.id, p.name, p.description FROM projects p JOIN requires r ON p.id = r.project_id WHERE r.skill_id = %s",
+            (skill_id,)
         )
         return [Skill(*row) for row in results]
 
