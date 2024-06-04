@@ -117,6 +117,8 @@ class Person(UserMixin):
             "INSERT INTO persons (name, email, username, password, bio, location) VALUES (%s, %s, %s, %s, %s, %s)",
             (name, email, username, hashed_password, bio, location)
         )
+        result = Database.fetchone("SELECT * FROM persons WHERE username = %s", (username,))
+        return Person(*result).id if result else None
 
     @staticmethod
     def update(user_id, name, email, bio, location):
