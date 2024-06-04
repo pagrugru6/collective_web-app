@@ -437,7 +437,7 @@ def edit_project(project_id):
         return redirect(url_for('project_home', project_id=project_id))
     
     skills = Skill.get_all()
-    project_skill_ids = [skill.id for skill in project.get_skills()]
+    project_skill_ids = [skill.id for skill in Requires.get_skills_for_project(project_id= project.id)]
     all_collectives = Collective.get_all()
     project.collective_ids = [c['id'] for c in project.collectives]
     return render_template('edit_project.html', project=project, all_collectives=all_collectives,skills=skills, project_skill_ids=project_skill_ids)
