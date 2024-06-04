@@ -312,7 +312,7 @@ def collective_home(collective_id):
         project_id: Organizes.get_collectives_for_project(project_id)
         for project_id in project_ids}
     messages = CollectiveMessage.get_messages(collective_id) if is_member else []
-    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages,members=members)
+    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages,members=members, collectives_for_projects = collectives_for_projects)
 
 @app.route('/project/<int:project_id>')
 @login_required

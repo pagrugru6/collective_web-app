@@ -25,20 +25,11 @@
         </ul>
         <a href="{{ url_for('create_project', collective_id=collective.id) }}">Create New Project</a>
 
-        <h2>Projects</h2>
-        <ul>
-            {% for project in projects %}
-            <li>
-                <a href="{{ url_for('profilePage', username=user.username) }}">{{ project.name }}</a> - {{ project.description }}
-            </li>
-            {% endfor %}
-        </ul>
-
         <h2>Members</h2>
         <ul>
             {% for member in members %}
             <li>
-                <a href="{{ url_for('profilePage', username=user.username) }}">{{ member.name }}</a> - {{ member.bio }}
+                <a href="{{ url_for('profilePage', username=member.username) }}">{{ member.name }}</a> - {{ member.bio }}
             </li>
             {% endfor %}
         </ul>
