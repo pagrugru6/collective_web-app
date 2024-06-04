@@ -281,10 +281,11 @@ def collective_home(collective_id):
         print(f"Collective with id={collective_id} not found")
         return "Collective not found", 404
     is_member = BelongsTo.is_member(current_user.id, collective_id)
+    members = BelongsTo.get_members(collective.id)
     print(f"User is {'a member' if is_member else 'not a member'} of collective {collective_id}")
     projects = Project.get_by_collective(collective_id) if is_member else []
     messages = CollectiveMessage.get_messages(collective_id) if is_member else []
-    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages)
+    return render_template('collective_home.html', collective=collective, is_member=is_member, projects=projects, messages=messages,members=members)
 
 @app.route('/project/<int:project_id>')
 @login_required

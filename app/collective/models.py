@@ -319,6 +319,13 @@ class BelongsTo:
             (person_id,)
         )
         return [Collective(*row) for row in results]
+    
+    @staticmethod
+    def get_members(collective_id):
+        results = Database.fetchall(
+            "SELECT c.id, c.name, c.email, c.username, c.password, c.bio, c.location FROM persons c JOIN belongs_to b ON c.id = b.person_id WHERE b.collective_id = %s",
+            (collective_id,))
+        return [Person(*row) for row in results]
 
 class Possesses:
     @staticmethod
@@ -357,7 +364,7 @@ class Participates:
             (person_id,)
         )
         return [Project(*row) for row in results]
-
+    
 class Organizes:
     @staticmethod
     def create(collective_id, project_id):
