@@ -5,7 +5,7 @@
     <title>Home</title>
 </head>
 <body>
-    <h1>Welcome, {{ user.name }}</h1>
+    <h1>{{ user.name }}</h1>
     <a href="{{ url_for('profile') }}">Edit Profile</a> |
     <a href="{{ url_for('browse_collectives') }}">Browse Collectives</a> |
     <a href="{{ url_for('browse_projects') }}">Browse Projects</a> |

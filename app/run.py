@@ -44,6 +44,18 @@ def home():
     skills = Possesses.get_skills_for_user(user_id)
     return render_template('home.html', user=user, collectives=collectives, projects=projects, skills = skills)
 
+@app.route('/user/<int:user_id>')
+@login_required
+def profilePage(user_id):
+    user = Person.get_by_id(user_id)
+    current_user_id = current_user.id
+    if(user_id == current_user_id):
+        return redirect(url_for('home'))
+    collectives = BelongsTo.get_collectives_for_user(user_id)
+    projects = Participates.get_projects_for_user(user_id)
+    skills = Possesses.get_skills_for_user(user_id)
+    return render_template('user.html', user=user, collectives=collectives, projects=projects, skills = skills)
+
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
