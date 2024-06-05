@@ -25,6 +25,15 @@
         {% endfor %}
     </ul>
     {% if is_member %}
+        <h2>Members</h2>
+                <ul>
+                    {% for member in members %}
+                    <li>
+                        <a href="{{ url_for('profilePage', username=member.username) }}">{{ member.name }}</a> - {{ member.bio }}
+                    </li>
+                    {% endfor %}
+                </ul>
+
         <h2>Forum</h2>
         <ul>
         {% for message in messages %}

@@ -323,11 +323,12 @@ def project_home(project_id):
         print(f"Project with id={project_id} not found")
         return "Project not found", 404
     is_member = Participates.is_member(current_user.id, project_id)
+    members = BelongsTo.get_members(project_id)
     collectives = Organizes.get_collectives_for_project(project_id)
     skills = Requires.get_skills_for_project(project_id)
     print(f"User is {'a participant' if is_member else 'not a participant'} of project {project_id}")
     messages = ProjectMessage.get_messages(project_id) if is_member else []
-    return render_template('project_home.html', project=project, is_member=is_member, messages=messages, collectives= collectives, skills=skills)
+    return render_template('project_home.html', project=project, is_member=is_member, messages=messages, collectives= collectives, skills=skills, members=members)
 
 # Route to join a collective
 @app.route('/collective/<int:collective_id>/join', methods=['POST'])
