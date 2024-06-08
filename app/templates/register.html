@@ -19,9 +19,37 @@
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
         <br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            {% if isPasswordApproved %}  
+            <label for="password">(must contain at least 1 character and 1 number)</label>  
+            {% elif isPasswordApproved==False  %}
+            <label style="color:Tomato;",for="password">(must contain at least 1 character and 1 number)</label>
+            {% else %}
+            <label for="password">(must contain at least 1 character and 1 number)</label>
+            {% endif %}
+        <br>
+        <!-- <ul>
+        {% if isPasswordApproved %}
+        <br>
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
+        <label for="password">(must contain at least 1 character and 1 number)</label>
         <br>
+        {% elif isPasswordApproved==False  %}
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <label style="color:Tomato;",for="password">(must contain at least 1 character and 1 number)</label>
+        <br>
+        {% else %}
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <label for="password">(must contain at least 1 character and 1 number)</label>
+        <br>
+        {% endif %}
+        </ul> -->
         <label for="bio">Bio:</label>
         <textarea id="bio" name="bio"></textarea>
         <br>

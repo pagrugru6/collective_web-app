@@ -5,6 +5,8 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from collective.models import Person, Collective, Project, Skill, BelongsTo, Possesses, Participates, Organizes, Requires, CollectiveMessage, ProjectMessage, Database, Location
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime;
+import re
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -109,14 +111,24 @@ def profile():
     user_skill_ids = [skill.id for skill in Possesses.get_skills_for_user(user.id)]
     return render_template('profile.html', user=user, skills=skills, user_skill_ids=user_skill_ids)
 
+def is_valid_password(password):
+    if re.search(r'[A-Za-z]', password) and re.search(r'\d', password):
+        return True
+    return False
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        isPasswordApproved = True
+        isPasswordApproved = is_valid_password(request.form['password'])
+        if (isPasswordApproved):
+            password = request.form['password']
+        else:
+            return render_template('register.html', isPasswordApproved=isPasswordApproved)
+            # return redirect(url_for('register'))
         name = request.form['name']
         email = request.form['email']
         username = request.form['username']
-        password = request.form['password']
         bio = request.form['bio']
         location = request.form['location']
         existing_skills = request.form.getlist('existing_skills')
